@@ -12,11 +12,13 @@ import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.hasProperty;
 import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.nullValue;
 import static org.hyperledger.fabric.protos.common.Common.HeaderType.ENDORSER_TRANSACTION_VALUE;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -302,4 +304,29 @@ public class ChaincodeStubImplTest {
 		assertThat(stub.getSignedProposal(), is(signedProposal));
 	}
 
+	@Test
+	public void testGetTxTimestamp() {
+		final Instant instant = Instant.now();
+		final Timestamp timestamp = Timestamp.newBuilder().setSeconds(instant.getEpochSecond()).setNanos(instant.getNano()).build();
+		final SignedProposal signedProposal = SignedProposal.newBuilder()
+				.setProposalBytes(Proposal.newBuilder()
+						.setHeader(Header.newBuilder()
+								.setChannelHeader(ChannelHeader.newBuilder()
+										.setType(ENDORSER_TRANSACTION_VALUE)
+										.setTimestamp(timestamp)
+										.build().toByteString()
+								)
+								.build().toByteString()
+						)
+						.build().toByteString()
+				).build();
+		final ChaincodeStubImpl stub = new ChaincodeStubImpl("txid", handler, new ArrayList<>(), signedProposal);
+		assertThat(stub.getTxTimestamp(), is(instant));
+	}
+
+	@Test
+	public void testGetTxTimestampNullSignedProposal() {
+		final ChaincodeStubImpl stub = new ChaincodeStubImpl("txid", handler, new ArrayList<>(), null);
+		assertThat(stub.getTxTimestamp(), is(nullValue()));
+	}
 }

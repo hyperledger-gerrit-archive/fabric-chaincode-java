@@ -18,6 +18,7 @@ package org.hyperledger.fabric.shim;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.stream.Collectors.toList;
 
+import java.time.Instant;
 import java.util.Arrays;
 import java.util.List;
 
@@ -301,5 +302,12 @@ public interface ChaincodeStub {
 	 *         chaincode.
 	 */
 	SignedProposal getSignedProposal();
+
+	/**
+	 * Returns the timestamp when the transaction was created.
+	 *
+	 * @return timestamp as specified in the transaction's channel header.
+	 */
+	Instant getTxTimestamp();
 
 }
