@@ -90,7 +90,7 @@ public class CompositeKeyTest {
 		assertThat(key.getAttributes(), contains("def", "ghi", "jkl", "mno"));
 		assertThat(key.toString(), is(equalTo("abc\u0000def\u0000ghi\u0000jkl\u0000mno\u0000")));
 	}
-	
+
 	@Test(expected=CompositeKeyFormatException.class)
 	public void testParseCompositeKeyInvalidObjectType() {
 		CompositeKey.parseCompositeKey("ab\udbff\udfffc\u0000def\u0000ghi\u0000jkl\u0000mno\u0000");

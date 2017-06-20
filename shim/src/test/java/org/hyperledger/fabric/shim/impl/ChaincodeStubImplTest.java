@@ -16,16 +16,19 @@ import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
 import org.hamcrest.Matchers;
+import org.hyperledger.fabric.protos.common.Common.ChannelHeader;
 import org.hyperledger.fabric.protos.ledger.queryresult.KvQueryResult;
 import org.hyperledger.fabric.protos.ledger.queryresult.KvQueryResult.KV;
 import org.hyperledger.fabric.protos.peer.ChaincodeEventPackage.ChaincodeEvent;
 import org.hyperledger.fabric.protos.peer.ChaincodeShim.QueryResponse;
 import org.hyperledger.fabric.protos.peer.ChaincodeShim.QueryResultBytes;
+import org.hyperledger.fabric.protos.peer.ProposalPackage.Proposal;
 import org.hyperledger.fabric.protos.peer.ProposalPackage.SignedProposal;
 import org.hyperledger.fabric.shim.Chaincode;
 import org.hyperledger.fabric.shim.Chaincode.Response.Status;
@@ -285,6 +288,22 @@ public class ChaincodeStubImplTest {
 		final SignedProposal signedProposal = SignedProposal.getDefaultInstance();
 		final ChaincodeStubImpl stub = new ChaincodeStubImpl("txid", handler, new ArrayList<>(), signedProposal);
 		assertThat(stub.getSignedProposal(), is(signedProposal));
+	}
+
+	@Test
+	public void testGetTxTimestamp() {
+		final Instant instant = Instant.now();
+		final Timestamp timestamp = Timestamp.newBuilder().setSeconds(instant.getEpochSecond()).setNanos(instant.getNano()).build();
+		final SignedProposal signedProposal = SignedProposal.newBuilder()
+				.setProposalBytes(Proposal.newBuilder()
+						.setHeader(ChannelHeader.newBuilder()
+								.setTimestamp(timestamp)
+								.build().toByteString()
+						)
+						.build().toByteString()
+				).build();
+		final ChaincodeStubImpl stub = new ChaincodeStubImpl("txid", handler, new ArrayList<>(), signedProposal);
+		assertThat(stub.getTxTimestamp(), is(instant));
 	}
 
 }
