@@ -18,15 +18,19 @@ package org.hyperledger.fabric.shim.impl;
 
 import static java.util.stream.Collectors.toList;
 
+import java.time.Instant;
 import java.util.Collections;
 import java.util.List;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
+import org.hyperledger.fabric.protos.common.Common.ChannelHeader;
+import org.hyperledger.fabric.protos.common.Common.Header;
 import org.hyperledger.fabric.protos.ledger.queryresult.KvQueryResult;
 import org.hyperledger.fabric.protos.ledger.queryresult.KvQueryResult.KV;
 import org.hyperledger.fabric.protos.peer.ChaincodeEventPackage.ChaincodeEvent;
 import org.hyperledger.fabric.protos.peer.ChaincodeShim.QueryResultBytes;
+import org.hyperledger.fabric.protos.peer.ProposalPackage.Proposal;
 import org.hyperledger.fabric.protos.peer.ProposalPackage.SignedProposal;
 import org.hyperledger.fabric.shim.Chaincode.Response;
 import org.hyperledger.fabric.shim.ChaincodeStub;
@@ -37,6 +41,7 @@ import org.hyperledger.fabric.shim.ledger.QueryResultsIterator;
 
 import com.google.protobuf.ByteString;
 import com.google.protobuf.InvalidProtocolBufferException;
+import com.google.protobuf.Timestamp;
 
 class ChaincodeStubImpl implements ChaincodeStub {
 
@@ -44,6 +49,7 @@ class ChaincodeStubImpl implements ChaincodeStub {
 	private final Handler handler;
 	private final List<ByteString> args;
 	private final SignedProposal signedProposal;
+	private final Instant txTimestamp;
 	private ChaincodeEvent event;
 
 	ChaincodeStubImpl(String txId, Handler handler, List<ByteString> args, SignedProposal signedProposal) {
@@ -51,6 +57,19 @@ class ChaincodeStubImpl implements ChaincodeStub {
 		this.handler = handler;
 		this.args = Collections.unmodifiableList(args);
 		this.signedProposal = signedProposal;
+		if(this.signedProposal == null) {
+			this.txTimestamp = null;
+		} else {
+			try {
+				final Proposal proposal = Proposal.parseFrom(signedProposal.getProposalBytes());
+				final Header header = Header.parseFrom(proposal.getHeader());
+				final ChannelHeader channelHeader = ChannelHeader.parseFrom(header.getChannelHeader());
+				final Timestamp timestamp = channelHeader.getTimestamp();
+				this.txTimestamp = Instant.ofEpochSecond(timestamp.getSeconds(), timestamp.getNanos());
+			} catch (InvalidProtocolBufferException e) {
+				throw new RuntimeException(e);
+			}
+		}
 	}
 
 	@Override
@@ -188,4 +207,9 @@ class ChaincodeStubImpl implements ChaincodeStub {
 	public SignedProposal getSignedProposal() {
 		return signedProposal;
 	}
+
+	public Instant getTxTimestamp() {
+		return txTimestamp;
+	}
+
 }
