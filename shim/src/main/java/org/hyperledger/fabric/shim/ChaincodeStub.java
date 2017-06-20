@@ -21,6 +21,7 @@ import static java.util.stream.Collectors.toList;
 import java.time.Instant;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
 
 import org.hyperledger.fabric.protos.peer.ChaincodeEventPackage.ChaincodeEvent;
 import org.hyperledger.fabric.protos.peer.ProposalPackage.SignedProposal;
@@ -318,4 +319,10 @@ public interface ChaincodeStub {
 	 */
 	byte[] getCreator();
 
+	/**
+	 * Returns the transient map associated with the current transaction.
+	 *
+	 * @return
+	 */
+	Map<String, byte[]> getTransient();
 }
