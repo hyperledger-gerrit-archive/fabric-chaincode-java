@@ -24,6 +24,8 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
+import javax.xml.bind.DatatypeConverter;
+
 import org.hamcrest.Matchers;
 import org.hyperledger.fabric.protos.common.Common.ChannelHeader;
 import org.hyperledger.fabric.protos.common.Common.Header;
@@ -376,6 +378,31 @@ public class ChaincodeStubImplTest {
 				hasEntry("key0", "value0".getBytes(UTF_8)),
 				hasEntry("key1", "value1".getBytes(UTF_8))
 				));
+	}
+
+	@Test
+	public void testGetBinding() {
+		final byte[] expectedDigest = DatatypeConverter.parseHexBinary("5093dd4f4277e964da8f4afbde0a9674d17f2a6a5961f0670fc21ae9b67f2983");
+		final SignedProposal signedProposal = SignedProposal.newBuilder()
+				.setProposalBytes(Proposal.newBuilder()
+						.setHeader(Header.newBuilder()
+								.setChannelHeader(ChannelHeader.newBuilder()
+										.setType(ENDORSER_TRANSACTION_VALUE)
+										.setTimestamp(Timestamp.getDefaultInstance())
+										.setEpoch(10)
+										.build().toByteString()
+								)
+								.setSignatureHeader(SignatureHeader.newBuilder()
+										.setNonce(ByteString.copyFromUtf8("nonce"))
+										.setCreator(ByteString.copyFromUtf8("creator"))
+										.build().toByteString()
+								)
+								.build().toByteString()
+						)
+						.build().toByteString()
+				).build();
+		final ChaincodeStubImpl stub = new ChaincodeStubImpl("txid", handler, new ArrayList<>(), signedProposal);
+		assertThat(stub.getBinding(), is(expectedDigest));
 	}
 
 }

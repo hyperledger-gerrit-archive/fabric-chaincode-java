@@ -18,6 +18,10 @@ package org.hyperledger.fabric.shim.impl;
 
 import static java.util.stream.Collectors.toList;
 
+import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.time.Instant;
 import java.util.Collections;
 import java.util.List;
@@ -57,6 +61,7 @@ class ChaincodeStubImpl implements ChaincodeStub {
 	private final Instant txTimestamp;
 	private final ByteString creator;
 	private final Map<String, ByteString> transientMap;
+	private final byte[] binding;
 	private ChaincodeEvent event;
 
 	ChaincodeStubImpl(String txId, Handler handler, List<ByteString> args, SignedProposal signedProposal) {
@@ -68,6 +73,7 @@ class ChaincodeStubImpl implements ChaincodeStub {
 			this.creator = null;
 			this.txTimestamp = null;
 			this.transientMap = Collections.emptyMap();
+			this.binding = null;
 		} else {
 			try {
 				final Proposal proposal = Proposal.parseFrom(signedProposal.getProposalBytes());
@@ -81,10 +87,23 @@ class ChaincodeStubImpl implements ChaincodeStub {
 				this.txTimestamp = Instant.ofEpochSecond(timestamp.getSeconds(), timestamp.getNanos());
 				this.creator = signatureHeader.getCreator();
 				this.transientMap = chaincodeProposalPayload.getTransientMapMap();
-			} catch (InvalidProtocolBufferException e) {
+				this.binding = computeBinding(channelHeader, signatureHeader);
+			} catch (InvalidProtocolBufferException | NoSuchAlgorithmException e) {
 				throw new RuntimeException(e);
 			}
 		}
+	}
+
+	private byte[] computeBinding(final ChannelHeader channelHeader, final SignatureHeader signatureHeader) throws NoSuchAlgorithmException {
+		final MessageDigest messageDigest = MessageDigest.getInstance("SHA-256");
+		messageDigest.update(signatureHeader.getNonce().asReadOnlyByteBuffer());
+		messageDigest.update(this.creator.asReadOnlyByteBuffer());
+		final ByteBuffer epochBytes = ByteBuffer.allocate(Long.BYTES)
+				.order(ByteOrder.LITTLE_ENDIAN)
+				.putLong(channelHeader.getEpoch());
+		epochBytes.flip();
+		messageDigest.update(epochBytes);
+		return messageDigest.digest();
 	}
 
 	private void validateProposalType(ChannelHeader channelHeader) {
@@ -246,5 +265,10 @@ class ChaincodeStubImpl implements ChaincodeStub {
 	@Override
 	public Map<String, byte[]> getTransient() {
 		return transientMap.entrySet().stream().collect(Collectors.toMap(x -> x.getKey(), x -> x.getValue().toByteArray()));
+	}
+
+	@Override
+	public byte[] getBinding() {
+		return this.binding;
 	}
 }
