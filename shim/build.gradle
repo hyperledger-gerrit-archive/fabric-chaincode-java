@@ -77,3 +77,52 @@ publishing {
 		}
 	}
 }
+
+task licenseCheck {
+	group = "license"
+	description = "Checks the License part of each source file"
+
+	println "Checking Licences..."
+	def noSPDX = new LinkedList<File>()
+	def illegals = new LinkedList<File>()
+	sourceSets.forEach {
+		sourceSet ->
+			sourceSet.allSource.findAll { !it.absolutePath.contains("proto") }.each {
+				file ->
+					BufferedReader r = new BufferedReader(new FileReader(file))
+					def line, builder = new StringBuilder()
+					while((line = r.readLine()) != null) {
+						builder.append(line)
+					}
+					line = builder.toString()
+					if(!line.contains("SPDX-License-Identifier")) {
+						noSPDX.add(file)
+						if(!line.contains("http://www.apache.org/licenses/LICENSE-2.0")) {
+							illegals.add(file)
+						}
+					}
+			}
+	}
+
+	if(!illegals.isEmpty()) {
+		def error = "The following files are missing traditional Apache 2.0 headers:\n"
+		illegals.each {
+			f -> error += f.getPath() + "\n"
+		}
+		error += "Fatal Error - All files must have a license header"
+		throw new IllegalArgumentException(error)
+	}
+
+	if(noSPDX.isEmpty()) {
+		println "All remaining files have Apache 2.0 headers"
+	} else {
+		println "The following files are missing SPDX-License-Identifier headers:"
+		noSPDX.each {
+			f -> println f.getPath()
+		}
+		println "Please replace the Apache license header comment text with:"
+		println "SPDX-License-Identifier: Apache-2.0"
+	}
+}
+
+build.dependsOn licenseCheck
