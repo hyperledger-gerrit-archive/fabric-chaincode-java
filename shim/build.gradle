@@ -45,6 +45,7 @@ sourceSets {
 			// so that IDEs can find the generated sources.
 			srcDirs 'build/generated/source/proto/main/grpc'
 			srcDirs 'build/generated/source/proto/main/java'
+			srcDirs 'src/main/proto'
 		}
 	}
 }
@@ -77,3 +78,59 @@ publishing {
 		}
 	}
 }
+
+task licenseCheck {
+	group = "license"
+	description = "Checks the License part of each source file"
+
+	println "Checking Licences..."
+	def noSPDX = new LinkedList<File>()
+	def missing = new LinkedList<File>()
+	sourceSets.forEach {
+		sourceSet ->
+			sourceSet.allSource.findAll { !it.path.contains("build") }.each {
+				file ->
+					BufferedReader r = new BufferedReader(new FileReader(file))
+					def line, hasSPDX = false, hasTraditional = false
+					while ((line = r.readLine()) != null) {
+						if (line.contains("SPDX-License-Identifier")) {
+							hasSPDX = true
+							break
+						}
+						if (line.contains("http://www.apache.org/licenses/LICENSE-2.0")) {
+							hasTraditional = true
+							break
+						}
+					}
+					if (!hasSPDX) {
+						if (hasTraditional) {
+							noSPDX.add(file)
+						} else {
+							missing.add(file)
+						}
+					}
+			}
+	}
+
+	if (noSPDX.isEmpty()) {
+		println "All remaining files have Apache 2.0 headers"
+	} else {
+		println "The following files are missing SPDX-License-Identifier headers:"
+		noSPDX.each {
+			f -> println "\t" + f.getPath()
+		}
+		println "Please replace the Apache license header comment text with:"
+		println "\nSPDX-License-Identifier: Apache-2.0\n"
+	}
+
+	if (!missing.isEmpty()) {
+		def error = "The following files are missing traditional Apache 2.0 headers:\n"
+		missing.each {
+			f -> error += f.getPath() + "\n"
+		}
+		error += "Fatal Error - All files must have a license header"
+		throw new IllegalArgumentException(error)
+	}
+}
+
+build.dependsOn licenseCheck
