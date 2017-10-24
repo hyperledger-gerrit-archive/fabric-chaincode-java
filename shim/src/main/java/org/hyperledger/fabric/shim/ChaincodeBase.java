@@ -94,9 +94,7 @@ public abstract class ChaincodeBase implements Chaincode {
 		try {
 			CommandLine cl = new DefaultParser().parse(options, args);
 			if (cl.hasOption('a')) {
-				host = cl.getOptionValue('a');
-				port = new Integer(host.split(":")[1]);
-				host = host.split(":")[0];
+				setPeerAddress(cl.getOptionValue('a'));
 			}
 			if (cl.hasOption('s')) {
 				tlsEnabled = true;
@@ -115,36 +113,50 @@ public abstract class ChaincodeBase implements Chaincode {
 		}
 	}
 
+	private void setPeerAddress(String peerAddress) {
+		String[] tokens = peerAddress.split(":");
+		port = new Integer(tokens[1]);
+		host = tokens[0];
+	}
+
 	private void processEnvironmentOptions() {
-		if (System.getenv().containsKey(CORE_CHAINCODE_ID_NAME)) {
-			this.id = System.getenv(CORE_CHAINCODE_ID_NAME);
+		if (envContainsKey(CORE_CHAINCODE_ID_NAME)) {
+			this.id = envGet(CORE_CHAINCODE_ID_NAME);
 		}
-		if (System.getenv().containsKey(CORE_PEER_ADDRESS)) {
-			this.host = System.getenv(CORE_PEER_ADDRESS);
+		if (envContainsKey(CORE_PEER_ADDRESS)) {
+			setPeerAddress(envGet(CORE_PEER_ADDRESS));
 		}
-		if (System.getenv().containsKey(CORE_PEER_TLS_ENABLED)) {
-			this.tlsEnabled = Boolean.parseBoolean(System.getenv(CORE_PEER_TLS_ENABLED));
-			if (System.getenv().containsKey(CORE_PEER_TLS_SERVERHOSTOVERRIDE)) {
-				this.hostOverrideAuthority = System.getenv(CORE_PEER_TLS_SERVERHOSTOVERRIDE);
+		if (envContainsKey(CORE_PEER_TLS_ENABLED)) {
+			this.tlsEnabled = Boolean.parseBoolean(envGet(CORE_PEER_TLS_ENABLED));
+			if (envContainsKey(CORE_PEER_TLS_SERVERHOSTOVERRIDE)) {
+				this.hostOverrideAuthority = envGet(CORE_PEER_TLS_SERVERHOSTOVERRIDE);
 			}
-			if (System.getenv().containsKey(CORE_PEER_TLS_ROOTCERT_FILE)) {
-				this.rootCertFile = System.getenv(CORE_PEER_TLS_ROOTCERT_FILE);
+			if (envContainsKey(CORE_PEER_TLS_ROOTCERT_FILE)) {
+				this.rootCertFile = envGet(CORE_PEER_TLS_ROOTCERT_FILE);
 			}
 		}
 	}
 
+	boolean envContainsKey(String key) {
+		return System.getenv().containsKey(key);
+	}
+
+	String envGet(String key) {
+		return System.getenv(key);
+	}
+
 	public ManagedChannel newPeerClientConnection() {
-		final NettyChannelBuilder builder = NettyChannelBuilder.forAddress(host, port);
+		final NettyChannelBuilder builder = NettyChannelBuilder.forAddress(getHost(), getPort());
 		logger.info("Configuring channel connection to peer.");
 
-		if (tlsEnabled) {
+		if (isTlsEnabled()) {
 			logger.info("TLS is enabled");
 			try {
-				final SslContext sslContext = GrpcSslContexts.forClient().trustManager(new File(this.rootCertFile)).build();
+				final SslContext sslContext = GrpcSslContexts.forClient().trustManager(new File(getRootCertFile())).build();
 				builder.negotiationType(NegotiationType.TLS);
-				if (!hostOverrideAuthority.equals("")) {
-					logger.info("Host override " + hostOverrideAuthority);
-					builder.overrideAuthority(hostOverrideAuthority);
+				if (!"".equals(getHostOverrideAuthority())) {
+					logger.info("Host override " + getHostOverrideAuthority());
+					builder.overrideAuthority(getHostOverrideAuthority());
 				}
 				builder.sslContext(sslContext);
 				logger.info("TLS context built: " + sslContext);
@@ -232,6 +244,30 @@ public abstract class ChaincodeBase implements Chaincode {
 				break;
 			}
 		}
+	}
+
+	public String getHost() {
+		return host;
+	}
+
+	public int getPort() {
+		return port;
+	}
+
+	public String getHostOverrideAuthority() {
+		return hostOverrideAuthority;
+	}
+
+	public boolean isTlsEnabled() {
+		return tlsEnabled;
+	}
+
+	public String getId() {
+		return id;
+	}
+
+	public String getRootCertFile() {
+		return rootCertFile;
 	}
 
 	protected static Response newSuccessResponse(String message, byte[] payload) {
