@@ -1,0 +1,8 @@
+Verified+1: Hyperledger Jobbuilder <jobbuilder@jenkins.hyperledger.org>
+Code-Review+1: Jingxiao Gu <gujingxiao@gmail.com>
+Code-Review+2: Jim Zhang <jim_the_matrix@hotmail.com>
+Submitted-by: Jim Zhang <jim_the_matrix@hotmail.com>
+Submitted-at: Thu, 26 Oct 2017 13:28:38 +0000
+Reviewed-on: https://gerrit.hyperledger.org/r/14781
+Project: fabric-chaincode-java
+Branch: refs/heads/master
