@@ -27,6 +27,7 @@ subprojects {
     dependencies {
         compile 'commons-cli:commons-cli:1.4'
         compile 'commons-logging:commons-logging:1.2'
+        compile 'io.netty:netty-tcnative-boringssl-static:2.0.5.Final'
 
         testCompile 'junit:junit:4.12'
         testCompile 'org.hamcrest:hamcrest-library:1.3'
