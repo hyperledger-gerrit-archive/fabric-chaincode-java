@@ -114,6 +114,15 @@ class ChaincodeStubImpl implements ChaincodeStub {
 	}
 
 	@Override
+	public byte[] getArgsSlice() {
+		ByteString result = ByteString.EMPTY;
+		for (ByteString arg : args) {
+			result = result.concat(arg);
+		}
+		return result.toByteArray();
+	}
+
+	@Override
 	public List<String> getStringArgs() {
 		return args.stream().map(x -> x.toStringUtf8()).collect(Collectors.toList());
 	}

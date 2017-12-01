@@ -43,6 +43,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.*;
 import static org.hamcrest.Matchers.contains;
 import static org.hyperledger.fabric.protos.common.Common.HeaderType.ENDORSER_TRANSACTION_VALUE;
+import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.verify;
@@ -77,6 +78,16 @@ public class ChaincodeStubImplTest {
 				ByteString.copyFromUtf8("arg2"));
 		final ChaincodeStubImpl stub = new ChaincodeStubImpl("myc", "txId", handler, args, null);
 		assertThat(stub.getStringArgs(), contains(args.stream().map(ByteString::toStringUtf8).toArray()));
+	}
+
+	@Test
+	public void testGetArgsSlice() {
+		List<ByteString> args = Arrays.asList(
+				ByteString.copyFromUtf8("arg0"),
+				ByteString.copyFromUtf8("arg1"),
+				ByteString.copyFromUtf8("arg2"));
+		final ChaincodeStubImpl stub = new ChaincodeStubImpl("myc", "txId", handler, args, null);
+		assertArrayEquals(stub.getArgsSlice(), "arg0arg1arg2".getBytes());
 	}
 
 	@Test
