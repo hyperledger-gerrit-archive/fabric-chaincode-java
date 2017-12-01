@@ -34,6 +34,15 @@ public interface ChaincodeStub {
 	List<byte[]> getArgs();
 
 	/**
+	 * Returns the arguments as a byte array intended for
+	 * {@link Chaincode#init(ChaincodeStub)} or
+	 * {@link Chaincode#invoke(ChaincodeStub)}.
+	 *
+	 * @return a byte array of slice of arguments
+	 */
+	byte[] getArgsSlice();
+
+	/**
 	 * Returns the arguments corresponding to the call to
 	 * {@link Chaincode#init(ChaincodeStub)} or
 	 * {@link Chaincode#invoke(ChaincodeStub)}.
