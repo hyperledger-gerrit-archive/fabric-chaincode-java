@@ -1,0 +1,50 @@
+plugins {
+	id 'java'
+	id 'application'
+}
+
+repositories {
+	// hyperledger snapshots repository
+	maven {
+		url 'https://nexus.hyperledger.org/content/repositories/snapshots'
+		name 'hyperledger-snapshots'
+	}
+	// hyperledger release repository
+	maven {
+		url 'https://nexus.hyperledger.org/content/repositories/releases'
+		name 'hyperledger-releases'
+	}
+	// 
+    jcenter()
+}
+
+distributions {
+	main {
+		baseName = 'chaincode'
+	}
+}
+
+distTar {
+	compression = Compression.GZIP
+}
+
+jar {
+	manifest {
+		attributes(
+			'Main-Class' : 'fabric.example.cc.example02.Example02'
+		)
+	}
+}
+
+archivesBaseName = "chaincode"
+
+mainClassName='fabric.example.cc.example02.Example02'
+
+applicationName='chaincode'
+
+dependencies {
+    compile 'org.glassfish:javax.json:1.1.0-M1'
+	compile 'org.hyperledger.fabric:fabric-chaincode-shim:1.2.0-SNAPSHOT'
+    testCompile 'junit:junit:4.12'
+}
+

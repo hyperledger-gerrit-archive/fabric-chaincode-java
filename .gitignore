@@ -1,6 +1,6 @@
 /.gradle/
-/.settings/
-/.project
+**/.settings/
+**/.project
 /.idea
 *.iml
 *.log
