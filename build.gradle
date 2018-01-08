@@ -6,7 +6,17 @@
 
 allprojects {
 	repositories {
+		// hyperledger snapshots repository
+		maven {
+			url 'https://nexus.hyperledger.org/content/repositories/snapshots'
+			name 'hyperledger-snapshots'
+		}
 		jcenter()
+		// hyperledger release repository
+		maven {
+			url 'https://nexus.hyperledger.org/content/repositories/releases'
+			name 'hyperledger-releases'
+		}
 	}
 }
 subprojects {
