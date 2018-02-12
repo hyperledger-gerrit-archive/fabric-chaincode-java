@@ -9,12 +9,15 @@ package org.hyperledger.fabric.shim;
 import static org.hyperledger.fabric.shim.Chaincode.Response.Status.INTERNAL_SERVER_ERROR;
 import static org.hyperledger.fabric.shim.Chaincode.Response.Status.SUCCESS;
 
+import java.io.ByteArrayInputStream;
 import java.io.File;
+import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.nio.charset.StandardCharsets;
-
-import javax.net.ssl.SSLException;
+import java.nio.file.Files;
+import java.nio.file.Paths;
+import java.util.Base64;
 
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.DefaultParser;
@@ -49,7 +52,9 @@ public abstract class ChaincodeBase implements Chaincode {
 	private int port = DEFAULT_PORT;
 	private String hostOverrideAuthority = "";
 	private boolean tlsEnabled = false;
-	private String rootCertFile = "/etc/hyperledger/fabric/peer.crt";
+	private String tlsClientKeyPath = "/etc/hyperledger/fabric/client.key";
+	private String tlsClientCertPath = "/etc/hyperledger/fabric/client.crt";
+	private String tlsClientRootCertPath = "/etc/hyperledger/fabric/peer.crt";
 
 	private String id;
 
@@ -58,6 +63,8 @@ public abstract class ChaincodeBase implements Chaincode {
 	private final static String CORE_PEER_TLS_ENABLED = "CORE_PEER_TLS_ENABLED";
 	private final static String CORE_PEER_TLS_SERVERHOSTOVERRIDE = "CORE_PEER_TLS_SERVERHOSTOVERRIDE";
 	private static final String CORE_PEER_TLS_ROOTCERT_FILE = "CORE_PEER_TLS_ROOTCERT_FILE";
+	private static final String ENV_TLS_CLIENT_KEY_PATH = "CORE_TLS_CLIENT_KEY_PATH";
+	private static final String ENV_TLS_CLIENT_CERT_PATH = "CORE_TLS_CLIENT_CERT_PATH";
 
 	/**
 	 * Start chaincode
@@ -94,7 +101,7 @@ public abstract class ChaincodeBase implements Chaincode {
 				} else {
 					host = cl.getOptionValue("peerAddress");
 				}
-				port = new Integer(host.split(":")[1]);
+				port = Integer.valueOf(host.split(":")[1]);
 				host = host.split(":")[0];
 			}
 			if (cl.hasOption('s')) {
@@ -127,7 +134,13 @@ public abstract class ChaincodeBase implements Chaincode {
 				this.hostOverrideAuthority = System.getenv(CORE_PEER_TLS_SERVERHOSTOVERRIDE);
 			}
 			if (System.getenv().containsKey(CORE_PEER_TLS_ROOTCERT_FILE)) {
-				this.rootCertFile = System.getenv(CORE_PEER_TLS_ROOTCERT_FILE);
+				this.tlsClientRootCertPath = System.getenv(CORE_PEER_TLS_ROOTCERT_FILE);
+			}
+			if (System.getenv().containsKey(ENV_TLS_CLIENT_KEY_PATH)) {
+				this.tlsClientKeyPath = System.getenv(ENV_TLS_CLIENT_KEY_PATH);
+			}
+			if (System.getenv().containsKey(ENV_TLS_CLIENT_CERT_PATH)) {
+				this.tlsClientCertPath = System.getenv(ENV_TLS_CLIENT_CERT_PATH);
 			}
 		}
 	}
@@ -139,7 +152,12 @@ public abstract class ChaincodeBase implements Chaincode {
 		if (tlsEnabled) {
 			logger.info("TLS is enabled");
 			try {
-				final SslContext sslContext = GrpcSslContexts.forClient().trustManager(new File(this.rootCertFile)).build();
+				final SslContext sslContext = GrpcSslContexts.forClient()
+						.trustManager(new File(this.tlsClientRootCertPath))
+						.keyManager(
+								new ByteArrayInputStream(Base64.getDecoder().decode(Files.readAllBytes(Paths.get(this.tlsClientCertPath)))),
+								new ByteArrayInputStream(Base64.getDecoder().decode(Files.readAllBytes(Paths.get(this.tlsClientKeyPath)))))
+						.build();
 				builder.negotiationType(NegotiationType.TLS);
 				if (!hostOverrideAuthority.equals("")) {
 					logger.info("Host override " + hostOverrideAuthority);
@@ -147,8 +165,8 @@ public abstract class ChaincodeBase implements Chaincode {
 				}
 				builder.sslContext(sslContext);
 				logger.info("TLS context built: " + sslContext);
-			} catch (SSLException e) {
-				logger.error("failed connect to peer with SSLException", e);
+			} catch (IOException e) {
+				logger.fatal("failed connect to peer", e);
 			}
 		} else {
 			builder.usePlaintext(true);
