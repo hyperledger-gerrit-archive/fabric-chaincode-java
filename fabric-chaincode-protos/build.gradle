@@ -41,6 +41,7 @@ dependencies {
     compile 'io.grpc:grpc-netty:1.6.1'
     compile 'io.grpc:grpc-protobuf:1.6.1'
     compile 'io.grpc:grpc-stub:1.6.1'
+    runtime 'io.netty:netty-tcnative-boringssl-static:2.0.5.Final:linux-x86_64'
 }
 
 protobuf {
