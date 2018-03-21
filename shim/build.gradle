@@ -37,18 +37,18 @@ sourceSets {
 			// so that IDEs can find the generated sources.
 			srcDirs = ['build/generated/source/proto/main/grpc',
 			           'build/generated/source/proto/main/java',
-                                   'src/main/java']
+			           'src/main/java']
 		}
-                proto {
-                    srcDirs 'src/main/proto'
-                }
+		proto {
+			srcDirs 'src/main/proto'
+		}
 	}
 
-        test {
-            java {
-                srcDir 'src/test'
-            }
-        }
+	test {
+		java {
+			srcDir 'src/test/java'
+		}
+	}
 }
 
 dependencies {
