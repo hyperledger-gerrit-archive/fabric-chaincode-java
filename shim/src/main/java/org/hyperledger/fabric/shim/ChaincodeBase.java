@@ -7,6 +7,7 @@ SPDX-License-Identifier: Apache-2.0
 package org.hyperledger.fabric.shim;
 
 import static java.lang.String.format;
+import static java.util.logging.Level.ALL;
 import static org.hyperledger.fabric.shim.Chaincode.Response.Status.INTERNAL_SERVER_ERROR;
 import static org.hyperledger.fabric.shim.Chaincode.Response.Status.SUCCESS;
 
@@ -19,6 +20,10 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.Base64;
+import java.util.logging.Level;
+import java.util.logging.LogRecord;
+import java.util.logging.Logger;
+import java.util.logging.SimpleFormatter;
 
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.DefaultParser;
@@ -73,6 +78,7 @@ public abstract class ChaincodeBase implements Chaincode {
 	public void start(String[] args) {
 		processEnvironmentOptions();
 		processCommandLineOptions(args);
+		initializeLogging();
 		try {
 			validateOptions();
 			new Thread(() -> {
@@ -84,6 +90,50 @@ public abstract class ChaincodeBase implements Chaincode {
 			}).start();
 		} catch (IllegalArgumentException e) {
 			logger.fatal("Chaincode could not start", e);
+		}
+	}
+
+	private void initializeLogging() {
+		System.setProperty("java.util.logging.SimpleFormatter.format","%1$tH:%1$tM:%1$tS:%1$tL %4$-7.7s %2$s %5$s%6$s%n");
+		final Logger rootLogger = Logger.getLogger("");
+		for(java.util.logging.Handler handler: rootLogger.getHandlers()) {
+			handler.setLevel(ALL);
+			handler.setFormatter(new SimpleFormatter() {
+				@Override
+				public synchronized String format(LogRecord record) {
+					return super.format(record)
+							.replaceFirst(".*SEVERE\\s*\\S*\\s*\\S*", "\u001B[1;31m$0\u001B[0m")
+							.replaceFirst(".*WARNING\\s*\\S*\\s*\\S*", "\u001B[1;33m$0\u001B[0m")
+							.replaceFirst(".*CONFIG\\s*\\S*\\s*\\S*", "\u001B[35m$0\u001B[0m")
+							.replaceFirst(".*FINE\\s*\\S*\\s*\\S*", "\u001B[36m$0\u001B[0m")
+							.replaceFirst(".*FINER\\s*\\S*\\s*\\S*", "\u001B[36m$0\u001B[0m")
+							.replaceFirst(".*FINEST\\s*\\S*\\s*\\S*", "\u001B[36m$0\u001B[0m");
+				}
+			});
+		}
+		// set logging level of shim logger
+		Logger.getLogger("org.hyperledger.fabric.shim").setLevel(mapLevel(System.getenv("CORE_CHAINCODE_LOGGING_SHIM")));
+
+		// set logging level of chaincode logger
+		Logger.getLogger(this.getClass().getPackage().getName()).setLevel(mapLevel(System.getenv("CORE_CHAINCODE_LOGGING_LEVEL")));
+
+	}
+
+	private Level mapLevel(String level) {
+		switch(level) {
+		case "CRITICAL":
+		case "ERROR":
+			return Level.SEVERE;
+		case "WARNING":
+			return Level.WARNING;
+		case "INFO":
+			return Level.INFO;
+		case "NOTICE":
+			return Level.CONFIG;
+		case "DEBUG":
+			return Level.FINEST;
+		default:
+			return Level.INFO;
 		}
 	}
 
