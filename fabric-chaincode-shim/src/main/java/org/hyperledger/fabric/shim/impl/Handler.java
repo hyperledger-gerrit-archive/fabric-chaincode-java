@@ -101,21 +101,21 @@ public class Handler {
 		final Channel<ChaincodeMessage> channel = new Channel<>();
 		String key = getTxKey(channelId, txId);
 		if (this.responseChannel.putIfAbsent(key, channel) != null) {
-			throw new IllegalStateException(format("[%-8s]Response channel already exists. Another request must be pending.", txId));
+			throw new IllegalStateException(format("[%-8.8s] Response channel already exists. Another request must be pending.", txId));
 		}
-		if (logger.isTraceEnabled()) logger.trace(format("[%-8s]Response channel created.", txId));
+		if (logger.isTraceEnabled()) logger.trace(format("[%-8.8s] Response channel created.", txId));
 		return channel;
 	}
 
 	private synchronized void sendChannel(ChaincodeMessage message) {
 		String key = getTxKey(message.getChannelId(), message.getTxid());
 		if (!responseChannel.containsKey(key)) {
-			throw new IllegalStateException(format("[%-8s]sendChannel does not exist", message.getTxid()));
+			throw new IllegalStateException(format("[%-8.8s] sendChannel does not exist", message.getTxid()));
 		}
 
-		logger.debug(String.format("[%-8s]Before send", message.getTxid()));
+		logger.debug(String.format("[%-8.8s] Before send", message.getTxid()));
 		responseChannel.get(key).add(message);
-		logger.debug(String.format("[%-8s]After send", message.getTxid()));
+		logger.debug(String.format("[%-8.8s] After send", message.getTxid()));
 	}
 
 	private ChaincodeMessage receiveChannel(Channel<ChaincodeMessage> channel) {
@@ -134,7 +134,7 @@ public class Handler {
 		String key = getTxKey(channelId, txId);
 		final Channel<ChaincodeMessage> channel = responseChannel.remove(key);
 		if (channel != null) channel.close();
-		if (logger.isTraceEnabled()) logger.trace(format("[%-8s]Response channel closed.",txId));
+		if (logger.isTraceEnabled()) logger.trace(format("[%-8.8s] Response channel closed.",txId));
 	}
 
 	/**
@@ -191,16 +191,16 @@ public class Handler {
 
 				if (result.getStatus().getCode() >= Chaincode.Response.Status.INTERNAL_SERVER_ERROR.getCode()) {
 					// Send ERROR with entire result.Message as payload
-					logger.error(String.format("[%-8s]Init failed. Sending %s", message.getTxid(), ERROR));
+					logger.error(String.format("[%-8.8s] Init failed. Sending %s", message.getTxid(), ERROR));
 					triggerNextState(newErrorEventMessage(message.getChannelId(), message.getTxid(), result.getMessage(), stub.getEvent()), true);
 				} else {
 					// Send COMPLETED with entire result as payload
-					logger.debug(String.format(String.format("[%-8s]Init succeeded. Sending %s", message.getTxid(), COMPLETED)));
+					logger.debug(String.format(String.format("[%-8.8s] Init succeeded. Sending %s", message.getTxid(), COMPLETED)));
 					triggerNextState(newCompletedEventMessage(message.getChannelId(), message.getTxid(), result, stub.getEvent()), true);
 				}
 
 			} catch (InvalidProtocolBufferException | RuntimeException e) {
-				logger.error(String.format("[%-8s]Init failed. Sending %s", message.getTxid(), ERROR), e);
+				logger.error(String.format("[%-8.8s] Init failed. Sending %s", message.getTxid(), ERROR), e);
 				triggerNextState(newErrorEventMessage(message.getChannelId(), message.getTxid(), e), true);
 			} finally {
 				// delete isTransaction entry
@@ -214,7 +214,7 @@ public class Handler {
 		logger.debug(String.format("Before %s event.", event.name));
 		logger.debug(String.format("Current state %s", fsm.current()));
 		final ChaincodeMessage message = extractMessageFromEvent(event);
-		logger.debug(String.format("[%-8s]Received %s, initializing chaincode", message.getTxid(), message.getType()));
+		logger.debug(String.format("[%-8.8s] Received %s, initializing chaincode", message.getTxid(), message.getType()));
 		if (message.getType() == INIT) {
 			// Call the chaincode's Run function to initialize
 			handleInit(message);
@@ -241,16 +241,16 @@ public class Handler {
 
 				if (result.getStatus().getCode() >= Chaincode.Response.Status.INTERNAL_SERVER_ERROR.getCode()) {
 					// Send ERROR with entire result.Message as payload
-					logger.error(String.format("[%-8s]Invoke failed. Sending %s", message.getTxid(), ERROR));
+					logger.error(String.format("[%-8.8s] Invoke failed. Sending %s", message.getTxid(), ERROR));
 					triggerNextState(newErrorEventMessage(message.getChannelId(), message.getTxid(), result.getMessage(), stub.getEvent()), true);
 				} else {
 					// Send COMPLETED with entire result as payload
-					logger.debug(String.format(String.format("[%-8s]Invoke succeeded. Sending %s", message.getTxid(), COMPLETED)));
+					logger.debug(String.format(String.format("[%-8.8s] Invoke succeeded. Sending %s", message.getTxid(), COMPLETED)));
 					triggerNextState(newCompletedEventMessage(message.getChannelId(), message.getTxid(), result, stub.getEvent()), true);
 				}
 
 			} catch (InvalidProtocolBufferException | RuntimeException e) {
-				logger.error(String.format("[%-8s]Invoke failed. Sending %s", message.getTxid(), ERROR), e);
+				logger.error(String.format("[%-8.8s] Invoke failed. Sending %s", message.getTxid(), ERROR), e);
 				triggerNextState(newErrorEventMessage(message.getChannelId(), message.getTxid(), e), true);
 			} finally {
 				// delete isTransaction entry
@@ -262,7 +262,7 @@ public class Handler {
 	// enterTransactionState will execute chaincode's Run if coming from a TRANSACTION event.
 	private void beforeTransaction(Event event) {
 		ChaincodeMessage message = extractMessageFromEvent(event);
-		logger.debug(String.format("[%-8s]Received %s, invoking transaction on chaincode(src:%s, dst:%s)", message.getTxid(), message.getType().toString(), event.src, event.dst));
+		logger.debug(String.format("[%-8.8s] Received %s, invoking transaction on chaincode(src:%s, dst:%s)", message.getTxid(), message.getType().toString(), event.src, event.dst));
 		if (message.getType() == TRANSACTION) {
 			// Call the chaincode's Run function to invoke transaction
 			handleTransaction(message);
@@ -274,9 +274,9 @@ public class Handler {
 		ChaincodeMessage message = extractMessageFromEvent(event);
 		try {
 			sendChannel(message);
-			logger.debug(String.format("[%-8s]Received %s, communicated (state:%s)", message.getTxid(), message.getType(), fsm.current()));
+			logger.debug(String.format("[%-8.8s] Received %s, communicated (state:%s)", message.getTxid(), message.getType(), fsm.current()));
 		} catch (Exception e) {
-			logger.error(String.format("[%-8s]error sending %s (state:%s): %s", message.getTxid(), message.getType(), fsm.current(), e));
+			logger.error(String.format("[%-8.8s] error sending %s (state:%s): %s", message.getTxid(), message.getType(), fsm.current(), e));
 		}
 	}
 
@@ -310,7 +310,7 @@ public class Handler {
 		try {
 			sendChannel(message);
 		} catch (Exception e) {
-			logger.debug(String.format("[%-8s]Error received from validator %s, communicated(state:%s)", message.getTxid(), message.getType(), fsm.current()));
+			logger.debug(String.format("[%-8.8s] Error received from validator %s, communicated(state:%s)", message.getTxid(), message.getType(), fsm.current()));
 		}
 	}
 
@@ -325,7 +325,7 @@ public class Handler {
 	}
 
 	void putState(String channelId, String txId, String key, ByteString value) {
-		logger.debug(format("[%-8s]Inside putstate (\"%s\":\"%s\"), isTransaction = %s", txId, key, value, isTransaction(channelId, txId)));
+		logger.debug(format("[%-8.8s] Inside putstate (\"%s\":\"%s\"), isTransaction = %s", txId, key, value, isTransaction(channelId, txId)));
 		if (!isTransaction(channelId, txId)) throw new IllegalStateException("Cannot put state in query context");
 		invokeChaincodeSupport(newPutStateEventMessage(channelId, txId, key, value));
 	}
@@ -370,7 +370,7 @@ public class Handler {
 		try {
 			return QueryResponse.parseFrom(invokeChaincodeSupport(newEventMessage(type, channelId, txId, payload)));
 		} catch (InvalidProtocolBufferException e) {
-			logger.error(String.format("[%-8s]unmarshall error", txId));
+			logger.error(String.format("[%-8.8s] unmarshall error", txId));
 			throw new RuntimeException("Error unmarshalling QueryResponse.", e);
 		}
 	}
@@ -388,19 +388,19 @@ public class Handler {
 
 			// wait for response
 			final ChaincodeMessage response = receiveChannel(responseChannel);
-			logger.debug(format("[%-8s]%s response received.", txId, response.getType()));
+			logger.debug(format("[%-8.8s] %s response received.", txId, response.getType()));
 
 			// handle response
 			switch (response.getType()) {
 			case RESPONSE:
-				logger.debug(format("[%-8s]Successful response received.", txId));
+				logger.debug(format("[%-8.8s] Successful response received.", txId));
 				return response.getPayload();
 			case ERROR:
-				logger.error(format("[%-8s]Unsuccessful response received.", txId));
-				throw new RuntimeException(format("[%-8s]Unsuccessful response received.", txId));
+				logger.error(format("[%-8.8s] Unsuccessful response received.", txId));
+				throw new RuntimeException(format("[%-8.8s] Unsuccessful response received.", txId));
 			default:
-				logger.error(format("[%-8s]Unexpected %s response received. Expected %s or %s.", txId, response.getType(), RESPONSE, ERROR));
-				throw new RuntimeException(format("[%-8s]Unexpected %s response received. Expected %s or %s.", txId, response.getType(), RESPONSE, ERROR));
+				logger.error(format("[%-8.8s] Unexpected %s response received. Expected %s or %s.", txId, response.getType(), RESPONSE, ERROR));
+				throw new RuntimeException(format("[%-8.8s] Unexpected %s response received. Expected %s or %s.", txId, response.getType(), RESPONSE, ERROR));
 			}
 		} finally {
 			releaseResponseChannelForTx(channelId, txId);
@@ -426,7 +426,7 @@ public class Handler {
 			// message (the actual response message)
 			final ChaincodeMessage responseMessage = ChaincodeMessage.parseFrom(payload);
 			// the actual response message must be of type COMPLETED
-			logger.debug(String.format("[%-8s]%s response received from other chaincode.", txId, responseMessage.getType()));
+			logger.debug(String.format("[%-8.8s] %s response received from other chaincode.", txId, responseMessage.getType()));
 			if (responseMessage.getType() == COMPLETED) {
 				// success
 				return toChaincodeResponse(Response.parseFrom(responseMessage.getPayload()));
@@ -444,13 +444,13 @@ public class Handler {
 	public synchronized void handleMessage(ChaincodeMessage message) throws Exception {
 
 		if (message.getType() == ChaincodeMessage.Type.KEEPALIVE) {
-			logger.debug(String.format("[%-8s] Recieved KEEPALIVE message, do nothing", message.getTxid()));
+			logger.debug(String.format("[%-8.8s] Recieved KEEPALIVE message, do nothing", message.getTxid()));
 			// Received a keep alive message, we don't do anything with it for
 			// now and it does not touch the state machine
 			return;
 		}
 
-		logger.debug(String.format("[%-8s]Handling ChaincodeMessage of type: %s(state:%s)", message.getTxid(), message.getType(), fsm.current()));
+		logger.debug(String.format("[%-8.8s] Handling ChaincodeMessage of type: %s(state:%s)", message.getTxid(), message.getType(), fsm.current()));
 
 		if (fsm.eventCannotOccur(message.getType().toString())) {
 			String errStr = String.format("[%s]Chaincode handler org.hyperledger.fabric.shim.fsm cannot handle message (%s) with payload size (%d) while in state: %s", message.getTxid(), message.getType(), message.getPayload().size(), fsm.current());
@@ -464,10 +464,10 @@ public class Handler {
 			fsm.raiseEvent(message.getType().toString(), message);
 		} catch (NoTransitionException e) {
 			if (e.error != null) throw e;
-			logger.debug(format("[%-8s]Ignoring NoTransitionError", message.getTxid()));
+			logger.debug(format("[%-8.8s] Ignoring NoTransitionError", message.getTxid()));
 		} catch (CancelledException e) {
 			if (e.error != null) throw e;
-			logger.debug(format("[%-8s]Ignoring CanceledError", message.getTxid()));
+			logger.debug(format("[%-8.8s] Ignoring CanceledError", message.getTxid()));
 		}
 	}
 
