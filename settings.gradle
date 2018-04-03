@@ -6,4 +6,5 @@
 rootProject.name = 'fabric-chaincode-java'
 
 include 'shim'
+include 'javaenv'
 include 'examples:fabric-example-simple-transfer'

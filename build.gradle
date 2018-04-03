@@ -24,7 +24,7 @@ allprojects {
 	}
 }
 
-configure(subprojects - project(':examples')) {
+configure(subprojects - project(':examples') - project(':javaenv')) {
 	apply plugin: 'java'
 	apply plugin: 'maven'
 
