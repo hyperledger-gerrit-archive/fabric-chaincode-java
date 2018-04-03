@@ -7,4 +7,5 @@ rootProject.name = 'fabric-chaincode-java'
 
 include 'fabric-chaincode-protos'
 include 'fabric-chaincode-shim'
+include 'javaenv'
 include 'examples:fabric-example-simple-transfer'
