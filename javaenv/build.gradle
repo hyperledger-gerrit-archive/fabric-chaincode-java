@@ -1,0 +1,15 @@
+task build(type: DockerBuild) {
+	group 'Build'
+	description 'Builds the javaenv Docker image'
+}
+
+class DockerBuild extends Exec {
+	def DockerBuild() {
+		description 'Builds a docker image from Dockerfile'
+		workingDir './src/main/docker'
+		commandLine 'docker', 'build',
+			'--tag', 'hyperledger/fabric-javaenv:latest',
+			'--tag', 'hyperledger/fabric-javaenv:x86_64-1.2.0',
+			'.'
+	}
+}
