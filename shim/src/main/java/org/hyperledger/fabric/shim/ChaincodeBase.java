@@ -31,11 +31,10 @@ import org.apache.commons.cli.Options;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.hyperledger.fabric.protos.peer.Chaincode.ChaincodeID;
-import org.hyperledger.fabric.protos.peer.ChaincodeShim.ChaincodeMessage;
-import org.hyperledger.fabric.protos.peer.ChaincodeShim.ChaincodeMessage.Type;
-import org.hyperledger.fabric.shim.impl.ChatStream;
+import org.hyperledger.fabric.shim.impl.ChaincodeSupportStream;
+import org.hyperledger.fabric.shim.impl.Handler;
 
-import io.grpc.ManagedChannel;
+import io.grpc.ManagedChannelBuilder;
 import io.grpc.netty.GrpcSslContexts;
 import io.grpc.netty.NegotiationType;
 import io.grpc.netty.NettyChannelBuilder;
@@ -81,13 +80,11 @@ public abstract class ChaincodeBase implements Chaincode {
 		initializeLogging();
 		try {
 			validateOptions();
-			new Thread(() -> {
-				logger.trace("chaincode started");
-				final ManagedChannel connection = newPeerClientConnection();
-				logger.trace("connection created");
-				chatWithPeer(connection);
-				logger.trace("chatWithPeer DONE");
-			}).start();
+			final ChaincodeID chaincodeId = ChaincodeID.newBuilder().setName(this.id).build();
+			final Chaincode chaincode = (Chaincode)this;
+			final ManagedChannelBuilder<?> channelBuilder = newChannelBuilder();
+			final Handler handler = new Handler(chaincodeId, chaincode);
+			new ChaincodeSupportStream(channelBuilder, handler::onChaincodeMessage, handler::nextOutboundChaincodeMessage);
 		} catch (IllegalArgumentException e) {
 			logger.fatal("Chaincode could not start", e);
 		}
@@ -194,7 +191,7 @@ public abstract class ChaincodeBase implements Chaincode {
 		}
 	}
 
-	public ManagedChannel newPeerClientConnection() {
+	private ManagedChannelBuilder<?> newChannelBuilder() {
 		final NettyChannelBuilder builder = NettyChannelBuilder.forAddress(host, port);
 		logger.info("Configuring channel connection to peer.");
 
@@ -216,34 +213,7 @@ public abstract class ChaincodeBase implements Chaincode {
 		} else {
 			builder.usePlaintext(true);
 		}
-		return builder.build();
-	}
-
-	public void chatWithPeer(ManagedChannel connection) {
-		ChatStream chatStream = new ChatStream(connection, this);
-
-		// Send the ChaincodeID during register.
-		ChaincodeID chaincodeID = ChaincodeID.newBuilder()
-				.setName(id)
-				.build();
-
-		ChaincodeMessage payload = ChaincodeMessage.newBuilder()
-				.setPayload(chaincodeID.toByteString())
-				.setType(Type.REGISTER)
-				.build();
-
-		// Register on the stream
-		logger.info(String.format("Registering as '%s' ... sending %s", id, Type.REGISTER));
-		chatStream.serialSend(payload);
-
-		while (true) {
-			try {
-				chatStream.receive();
-			} catch (Exception e) {
-				logger.error("Receiving message error", e);
-				break;
-			}
-		}
+		return builder;
 	}
 
 	protected static Response newSuccessResponse(String message, byte[] payload) {
