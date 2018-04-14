@@ -13,14 +13,17 @@ import java.io.File;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.nio.charset.StandardCharsets;
+import java.security.Security;
 
 import javax.net.ssl.SSLException;
 
+import io.netty.handler.ssl.SslProvider;
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.DefaultParser;
 import org.apache.commons.cli.Options;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.hyperledger.fabric.protos.peer.Chaincode.ChaincodeID;
 import org.hyperledger.fabric.protos.peer.ChaincodeShim.ChaincodeMessage;
 import org.hyperledger.fabric.protos.peer.ChaincodeShim.ChaincodeMessage.Type;
@@ -59,6 +62,10 @@ public abstract class ChaincodeBase implements Chaincode {
 	private final static String CORE_PEER_TLS_SERVERHOSTOVERRIDE = "CORE_PEER_TLS_SERVERHOSTOVERRIDE";
 	private static final String CORE_PEER_TLS_ROOTCERT_FILE = "CORE_PEER_TLS_ROOTCERT_FILE";
 
+	static {
+		Security.addProvider(new BouncyCastleProvider());
+		//Security.addProvider(new OpenSSLProvider());
+	}
 	/**
 	 * Start chaincode
 	 *
@@ -112,6 +119,14 @@ public abstract class ChaincodeBase implements Chaincode {
 			logger.warn("cli parsing failed with exception", e);
 
 		}
+
+		logger.info("<<<<<<<<<<<<<CommandLine options>>>>>>>>>>>>");
+		logger.info("CORE_CHAINCODE_ID_NAME: " + this.id);
+		logger.info("CORE_PEER_ADDRESS: " + this.host);
+		logger.info("CORE_PEER_TLS_ENABLED: " + this.tlsEnabled);
+		logger.info("CORE_PEER_TLS_SERVERHOSTOVERRIDE: " + this.hostOverrideAuthority);
+		logger.info("CORE_PEER_TLS_ROOTCERT_FILE: " + this.rootCertFile);
+
 	}
 
 	private void processEnvironmentOptions() {
@@ -130,6 +145,13 @@ public abstract class ChaincodeBase implements Chaincode {
 				this.rootCertFile = System.getenv(CORE_PEER_TLS_ROOTCERT_FILE);
 			}
 		}
+
+		logger.info("<<<<<<<<<<<<<Enviromental options>>>>>>>>>>>>");
+		logger.info("CORE_CHAINCODE_ID_NAME: " + this.id);
+		logger.info("CORE_PEER_ADDRESS: " + this.host);
+		logger.info("CORE_PEER_TLS_ENABLED: " + this.tlsEnabled);
+		logger.info("CORE_PEER_TLS_SERVERHOSTOVERRIDE: " + this.hostOverrideAuthority);
+		logger.info("CORE_PEER_TLS_ROOTCERT_FILE: " + this.rootCertFile);
 	}
 
 	public ManagedChannel newPeerClientConnection() {
@@ -139,7 +161,7 @@ public abstract class ChaincodeBase implements Chaincode {
 		if (tlsEnabled) {
 			logger.info("TLS is enabled");
 			try {
-				final SslContext sslContext = GrpcSslContexts.forClient().trustManager(new File(this.rootCertFile)).build();
+				final SslContext sslContext = GrpcSslContexts.forClient().trustManager(new File(this.rootCertFile)).sslProvider(SslProvider.OPENSSL).build();
 				builder.negotiationType(NegotiationType.TLS);
 				if (!hostOverrideAuthority.equals("")) {
 					logger.info("Host override " + hostOverrideAuthority);

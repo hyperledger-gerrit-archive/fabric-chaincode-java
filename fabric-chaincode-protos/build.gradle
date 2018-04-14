@@ -9,6 +9,7 @@ apply plugin: 'de.undercouch.download'
 repositories {
     maven { url "https://plugins.gradle.org/m2/" }
     jcenter()
+    mavenCentral()
 }
 
 // Fabric branch to download proto files from
@@ -36,11 +37,15 @@ buildscript {
 }
 
 dependencies {
-    compile 'com.google.protobuf:protobuf-java:3.0.0'
-    compile 'com.google.protobuf:protobuf-java-util:3.0.0'
-    compile 'io.grpc:grpc-netty:1.6.1'
-    compile 'io.grpc:grpc-protobuf:1.6.1'
-    compile 'io.grpc:grpc-stub:1.6.1'
+    compile 'com.google.protobuf:protobuf-java:3.5.1'
+    compile 'com.google.protobuf:protobuf-java-util:3.5.1'
+    compile 'io.grpc:grpc-netty:1.9.0'
+    compile 'io.grpc:grpc-protobuf:1.9.0'
+    compile 'io.grpc:grpc-stub:1.9.0'
+    compile 'io.netty:netty-tcnative-boringssl-static:2.0.7.Final'
+    compile 'org.bouncycastle:bcpkix-jdk15on:1.59'
+    compile 'org.bouncycastle:bcprov-jdk15on:1.59'
+//    compile 'org.conscrypt:conscrypt-openjdk-uber:1.1.0'
 }
 
 protobuf {
@@ -51,7 +56,7 @@ protobuf {
     plugins {
         // define grpc plugin for the protobuf compiler
         grpc {
-            artifact = 'io.grpc:protoc-gen-grpc-java:1.6.1'
+            artifact = 'io.grpc:protoc-gen-grpc-java:1.9.0'
         }
     }
     generateProtoTasks {
