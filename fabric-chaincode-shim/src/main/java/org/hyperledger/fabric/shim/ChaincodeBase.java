@@ -6,31 +6,31 @@ SPDX-License-Identifier: Apache-2.0
 
 package org.hyperledger.fabric.shim;
 
-import static org.hyperledger.fabric.shim.Chaincode.Response.Status.INTERNAL_SERVER_ERROR;
-import static org.hyperledger.fabric.shim.Chaincode.Response.Status.SUCCESS;
-
-import java.io.File;
-import java.io.PrintWriter;
-import java.io.StringWriter;
-import java.nio.charset.StandardCharsets;
-
-import javax.net.ssl.SSLException;
-
-import org.apache.commons.cli.CommandLine;
-import org.apache.commons.cli.DefaultParser;
-import org.apache.commons.cli.Options;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
-import org.hyperledger.fabric.protos.peer.Chaincode.ChaincodeID;
-import org.hyperledger.fabric.protos.peer.ChaincodeShim.ChaincodeMessage;
-import org.hyperledger.fabric.protos.peer.ChaincodeShim.ChaincodeMessage.Type;
-import org.hyperledger.fabric.shim.impl.ChatStream;
-
 import io.grpc.ManagedChannel;
 import io.grpc.netty.GrpcSslContexts;
 import io.grpc.netty.NegotiationType;
 import io.grpc.netty.NettyChannelBuilder;
 import io.netty.handler.ssl.SslContext;
+import org.apache.commons.cli.CommandLine;
+import org.apache.commons.cli.DefaultParser;
+import org.apache.commons.cli.Options;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
+import org.bouncycastle.jce.provider.BouncyCastleProvider;
+import org.hyperledger.fabric.protos.peer.Chaincode.ChaincodeID;
+import org.hyperledger.fabric.protos.peer.ChaincodeShim.ChaincodeMessage;
+import org.hyperledger.fabric.protos.peer.ChaincodeShim.ChaincodeMessage.Type;
+import org.hyperledger.fabric.shim.impl.ChatStream;
+
+import java.io.*;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Paths;
+import java.security.Security;
+import java.util.Base64;
+
+import static org.hyperledger.fabric.shim.Chaincode.Response.Status.INTERNAL_SERVER_ERROR;
+import static org.hyperledger.fabric.shim.Chaincode.Response.Status.SUCCESS;
 
 public abstract class ChaincodeBase implements Chaincode {
 
@@ -47,18 +47,22 @@ public abstract class ChaincodeBase implements Chaincode {
 
 	private String host = DEFAULT_HOST;
 	private int port = DEFAULT_PORT;
-	private String hostOverrideAuthority = "";
 	private boolean tlsEnabled = false;
-	private String rootCertFile = "/etc/hyperledger/fabric/peer.crt";
+    private String tlsClientKeyPath;
+    private String tlsClientCertPath;
+    private String tlsClientRootCertPath;
 
 	private String id;
 
 	private final static String CORE_CHAINCODE_ID_NAME = "CORE_CHAINCODE_ID_NAME";
 	private final static String CORE_PEER_ADDRESS = "CORE_PEER_ADDRESS";
 	private final static String CORE_PEER_TLS_ENABLED = "CORE_PEER_TLS_ENABLED";
-	private final static String CORE_PEER_TLS_SERVERHOSTOVERRIDE = "CORE_PEER_TLS_SERVERHOSTOVERRIDE";
 	private static final String CORE_PEER_TLS_ROOTCERT_FILE = "CORE_PEER_TLS_ROOTCERT_FILE";
-
+    private static final String ENV_TLS_CLIENT_KEY_PATH = "CORE_TLS_CLIENT_KEY_PATH";
+    private static final String ENV_TLS_CLIENT_CERT_PATH = "CORE_TLS_CLIENT_CERT_PATH";
+	static {
+		Security.addProvider(new BouncyCastleProvider());
+	}
 	/**
 	 * Start chaincode
 	 *
@@ -67,25 +71,43 @@ public abstract class ChaincodeBase implements Chaincode {
 	public void start(String[] args) {
 		processEnvironmentOptions();
 		processCommandLineOptions(args);
-		if (this.id == null) {
-			logger.error(String.format("The chaincode id must be specified using either the -i or --i command line options or the %s environment variable.", CORE_CHAINCODE_ID_NAME));
-		}
-		new Thread(() -> {
-			logger.trace("chaincode started");
-			final ManagedChannel connection = newPeerClientConnection();
-			logger.trace("connection created");
-			chatWithPeer(connection);
-			logger.trace("chatWithPeer DONE");
-		}).start();
-	}
+        try {
+            validateOptions();
+            new Thread(() -> {
+                logger.trace("chaincode started");
+                final ManagedChannel connection = newPeerClientConnection();
+                logger.trace("connection created");
+                chatWithPeer(connection);
+                logger.trace("chatWithPeer DONE");
+            }).start();
+        } catch (IllegalArgumentException e) {
+            logger.fatal("Chaincode could not start", e);
+        }
+    }
+
+    private void validateOptions() {
+        if (this.id == null) {
+            throw new IllegalArgumentException(String.format("The chaincode id must be specified using either the -i or --i command line options or the %s environment variable.", CORE_CHAINCODE_ID_NAME));
+        }
+        if (this.tlsEnabled) {
+            if (tlsClientCertPath == null) {
+                throw new IllegalArgumentException(String.format("Client key certificate chain (%s) was not specified.", ENV_TLS_CLIENT_CERT_PATH));
+            }
+            if (tlsClientKeyPath == null) {
+                throw new IllegalArgumentException(String.format("Client key (%s) was not specified.", ENV_TLS_CLIENT_KEY_PATH));
+            }
+            if (tlsClientRootCertPath == null) {
+                throw new IllegalArgumentException(String.format("Peer certificate trust store (%s) was not specified.", CORE_PEER_TLS_ROOTCERT_FILE));
+            }
+        }
+    }
 
 	private void processCommandLineOptions(String[] args) {
 		Options options = new Options();
 		options.addOption("a", "peer.address", true, "Address of peer to connect to");
 		options.addOption(null, "peerAddress", true, "Address of peer to connect to");
-		options.addOption("s", "securityEnabled", false, "Present if security is enabled");
 		options.addOption("i", "id", true, "Identity of chaincode");
-		options.addOption("o", "hostNameOverride", true, "Hostname override for server certificate");
+
 		try {
 			CommandLine cl = new DefaultParser().parse(options, args);
 			if (cl.hasOption("peerAddress") || cl.hasOption('a')) {
@@ -94,17 +116,10 @@ public abstract class ChaincodeBase implements Chaincode {
 				} else {
 					host = cl.getOptionValue("peerAddress");
 				}
-				port = new Integer(host.split(":")[1]);
+				port = Integer.valueOf(host.split(":")[1]);
 				host = host.split(":")[0];
 			}
-			if (cl.hasOption('s')) {
-				tlsEnabled = true;
-				logger.info("TLS enabled");
-				if (cl.hasOption('o')) {
-					hostOverrideAuthority = cl.getOptionValue('o');
-					logger.info("server host override given " + hostOverrideAuthority);
-				}
-			}
+
 			if (cl.hasOption('i')) {
 				id = cl.getOptionValue('i');
 			}
@@ -112,7 +127,15 @@ public abstract class ChaincodeBase implements Chaincode {
 			logger.warn("cli parsing failed with exception", e);
 
 		}
-	}
+
+		logger.info("<<<<<<<<<<<<<CommandLine options>>>>>>>>>>>>");
+		logger.info("CORE_CHAINCODE_ID_NAME: " + this.id);
+		logger.info("CORE_PEER_ADDRESS: " + this.host + ":" + this.port);
+		logger.info("CORE_PEER_TLS_ENABLED: " + this.tlsEnabled);
+		logger.info("CORE_PEER_TLS_ROOTCERT_FILE" + this.tlsClientRootCertPath);
+        logger.info("CORE_TLS_CLIENT_KEY_PATH" + this.tlsClientKeyPath);
+        logger.info("CORE_TLS_CLIENT_CERT_PATH" + this.tlsClientCertPath);
+    }
 
 	private void processEnvironmentOptions() {
 		if (System.getenv().containsKey(CORE_CHAINCODE_ID_NAME)) {
@@ -121,15 +144,20 @@ public abstract class ChaincodeBase implements Chaincode {
 		if (System.getenv().containsKey(CORE_PEER_ADDRESS)) {
 			this.host = System.getenv(CORE_PEER_ADDRESS);
 		}
-		if (System.getenv().containsKey(CORE_PEER_TLS_ENABLED)) {
-			this.tlsEnabled = Boolean.parseBoolean(System.getenv(CORE_PEER_TLS_ENABLED));
-			if (System.getenv().containsKey(CORE_PEER_TLS_SERVERHOSTOVERRIDE)) {
-				this.hostOverrideAuthority = System.getenv(CORE_PEER_TLS_SERVERHOSTOVERRIDE);
-			}
-			if (System.getenv().containsKey(CORE_PEER_TLS_ROOTCERT_FILE)) {
-				this.rootCertFile = System.getenv(CORE_PEER_TLS_ROOTCERT_FILE);
-			}
-		}
+        this.tlsEnabled = Boolean.parseBoolean(System.getenv(CORE_PEER_TLS_ENABLED));
+        if(this.tlsEnabled) {
+            this.tlsClientRootCertPath = System.getenv(CORE_PEER_TLS_ROOTCERT_FILE);
+            this.tlsClientKeyPath = System.getenv(ENV_TLS_CLIENT_KEY_PATH);
+            this.tlsClientCertPath = System.getenv(ENV_TLS_CLIENT_CERT_PATH);
+        }
+
+		logger.info("<<<<<<<<<<<<<Enviromental options>>>>>>>>>>>>");
+		logger.info("CORE_CHAINCODE_ID_NAME: " + this.id);
+		logger.info("CORE_PEER_ADDRESS: " + this.host);
+		logger.info("CORE_PEER_TLS_ENABLED: " + this.tlsEnabled);
+        logger.info("CORE_PEER_TLS_ROOTCERT_FILE" + this.tlsClientRootCertPath);
+        logger.info("CORE_TLS_CLIENT_KEY_PATH" + this.tlsClientKeyPath);
+        logger.info("CORE_TLS_CLIENT_CERT_PATH" + this.tlsClientCertPath);
 	}
 
 	public ManagedChannel newPeerClientConnection() {
@@ -139,16 +167,21 @@ public abstract class ChaincodeBase implements Chaincode {
 		if (tlsEnabled) {
 			logger.info("TLS is enabled");
 			try {
-				final SslContext sslContext = GrpcSslContexts.forClient().trustManager(new File(this.rootCertFile)).build();
-				builder.negotiationType(NegotiationType.TLS);
-				if (!hostOverrideAuthority.equals("")) {
-					logger.info("Host override " + hostOverrideAuthority);
-					builder.overrideAuthority(hostOverrideAuthority);
-				}
+                byte ckb[] = Files.readAllBytes(Paths.get(this.tlsClientKeyPath));
+                byte ccb[] = Files.readAllBytes(Paths.get(this.tlsClientCertPath));
+
+
+                final SslContext sslContext = GrpcSslContexts.forClient()
+                        .trustManager(new File(this.tlsClientRootCertPath))
+                        .keyManager(
+                                new ByteArrayInputStream(Base64.getDecoder().decode(ccb)),
+                                new ByteArrayInputStream(Base64.getDecoder().decode(ckb)))
+                        .build();
+                builder.negotiationType(NegotiationType.TLS);
 				builder.sslContext(sslContext);
 				logger.info("TLS context built: " + sslContext);
-			} catch (SSLException e) {
-				logger.error("failed connect to peer with SSLException", e);
+			} catch (IOException e) {
+				logger.error("failed connect to peer with IOException", e);
 			}
 		} else {
 			builder.usePlaintext(true);
