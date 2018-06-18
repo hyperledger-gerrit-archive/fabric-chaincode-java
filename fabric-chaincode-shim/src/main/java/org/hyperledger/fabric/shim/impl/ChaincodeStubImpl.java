@@ -181,7 +181,11 @@ class ChaincodeStubImpl implements ChaincodeStub {
 		if (endKey == null || endKey.isEmpty()) endKey = UNSPECIFIED_KEY;
 		CompositeKey.validateSimpleKeys(startKey, endKey);
 
-		return new QueryResultsIteratorImpl<KeyValue>(this.handler, getChannelId(), getTxId(),
+		return executeGetStateByRange(startKey, endKey);
+	}
+
+	private QueryResultsIterator<KeyValue> executeGetStateByRange(String startKey, String endKey) {
+		return new QueryResultsIteratorImpl<>(this.handler, getChannelId(), getTxId(),
 				handler.getStateByRange(getChannelId(), getTxId(), startKey, endKey),
 				queryResultBytesToKv.andThen(KeyValueImpl::new)
 				);
@@ -199,10 +203,18 @@ class ChaincodeStubImpl implements ChaincodeStub {
 
 	@Override
 	public QueryResultsIterator<KeyValue> getStateByPartialCompositeKey(String compositeKey) {
-		if (compositeKey == null || compositeKey.isEmpty()) {
-			compositeKey = UNSPECIFIED_KEY;
+		return getStateByPartialCompositeKey(new CompositeKey(compositeKey));
+	}
+
+	@Override
+	public QueryResultsIterator<KeyValue> getStateByPartialCompositeKey(CompositeKey compositeKey) {
+		if (compositeKey == null) {
+			compositeKey = new CompositeKey(UNSPECIFIED_KEY);
 		}
-		return getStateByRange(compositeKey, compositeKey + "\udbff\udfff");
+
+		String cKeyAsString = compositeKey.toString();
+
+		return executeGetStateByRange(cKeyAsString, cKeyAsString + Character.MAX_HIGH_SURROGATE + Character.MAX_LOW_SURROGATE);
 	}
 
 	@Override

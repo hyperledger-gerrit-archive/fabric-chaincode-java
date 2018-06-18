@@ -143,6 +143,19 @@ public interface ChaincodeStub {
 	QueryResultsIterator<KeyValue> getStateByPartialCompositeKey(String compositeKey);
 
 	/**
+	 * Returns all existing keys, and their values, that are prefixed by the
+	 * specified partial {@link CompositeKey}.
+	 *
+	 * If a full composite key is specified, it will not match itself, resulting
+	 * in no keys being returned.
+	 *
+	 * @param compositeKey
+	 *            partial composite key
+	 * @return an {@link Iterable} of {@link KeyValue}
+	 */
+	QueryResultsIterator<KeyValue> getStateByPartialCompositeKey(CompositeKey compositeKey);
+
+	/**
 	 * Given a set of attributes, this method combines these attributes to
 	 * return a composite key.
 	 *
