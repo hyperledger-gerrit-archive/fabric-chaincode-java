@@ -201,6 +201,53 @@ public class ChaincodeStubImplTest {
 
 	@Test
 	public void testGetStateByPartialCompositeKey() {
+
+		ChaincodeStubImpl stub = prepareStubAndMockHandler();
+
+		stub.getStateByPartialCompositeKey("KEY");
+		String key = new CompositeKey("KEY").toString();
+		verify(handler).getStateByRange("myc", "txId", key, key + "\udbff\udfff");
+
+		stub.getStateByPartialCompositeKey("");
+		key = new CompositeKey("").toString();
+		verify(handler).getStateByRange("myc", "txId", key, key + "\udbff\udfff");
+	}
+
+	@Test
+	public void testGetStateByPartialCompositeKey_withAttributesAsString() {
+
+		ChaincodeStubImpl stub = prepareStubAndMockHandler();
+		CompositeKey cKey = new CompositeKey("KEY", "attr1", "attr2");
+		stub.getStateByPartialCompositeKey(cKey.toString());
+		verify(handler).getStateByRange("myc", "txId", cKey.toString(), cKey.toString() + "\udbff\udfff");
+
+	}
+
+	@Test
+	public void testGetStateByPartialCompositeKey_withAttributesWithSplittedParams() {
+
+		ChaincodeStubImpl stub = prepareStubAndMockHandler();
+		CompositeKey cKey = new CompositeKey("KEY", "attr1", "attr2", "attr3");
+		stub.getStateByPartialCompositeKey("KEY", "attr1", "attr2", "attr3");
+		verify(handler).getStateByRange("myc", "txId", cKey.toString(), cKey.toString() + "\udbff\udfff");
+
+	}
+
+	@Test
+	public void testGetStateByPartialCompositeKey_withCompositeKey() {
+
+		ChaincodeStubImpl stub = prepareStubAndMockHandler();
+
+		CompositeKey key = new CompositeKey("KEY");
+		stub.getStateByPartialCompositeKey(key);
+		verify(handler).getStateByRange("myc", "txId", key.toString(), key.toString() + "\udbff\udfff");
+
+		key = new CompositeKey("");
+		stub.getStateByPartialCompositeKey(key);
+		verify(handler).getStateByRange("myc", "txId", key.toString(), key.toString() + "\udbff\udfff");
+	}
+
+	private ChaincodeStubImpl prepareStubAndMockHandler() {
 		final ChaincodeStubImpl stub = new ChaincodeStubImpl("myc", "txId", handler, Collections.emptyList(), null);
 		final KV[] keyValues = new KV[]{
 				KV.newBuilder()
@@ -218,11 +265,8 @@ public class ChaincodeStubImplTest {
 				.addResults(QueryResultBytes.newBuilder().setResultBytes(keyValues[1].toByteString()))
 				.build();
 		when(handler.getStateByRange(anyString(), anyString(), anyString(), anyString())).thenReturn(value);
-		stub.getStateByPartialCompositeKey("KEY");
-		verify(handler).getStateByRange("myc", "txId", "KEY", "KEY\udbff\udfff");
 
-		stub.getStateByPartialCompositeKey(null);
-		verify(handler).getStateByRange("myc", "txId", "\u0001", "\u0001\udbff\udfff");
+		return stub;
 	}
 
 	@Test
