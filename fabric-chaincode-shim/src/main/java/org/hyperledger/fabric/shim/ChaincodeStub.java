@@ -173,12 +173,53 @@ public interface ChaincodeStub {
      * If a full composite key is specified, it will not match itself, resulting
      * in no keys being returned.
      * <p>
+     *
+     * <p>
+     * This method takes responsibility to correctly parse the {@link CompositeKey} from a String
+     * and behaves exactly as {@link ChaincodeStub#getStateByPartialCompositeKey(CompositeKey)}.
+     * </p>
+     * <p>
      * Call close() on the returned {@link QueryResultsIterator#close()} object when done.
      *
      * @param compositeKey partial composite key
      * @return an {@link Iterable} of {@link KeyValue}
      */
     QueryResultsIterator<KeyValue> getStateByPartialCompositeKey(String compositeKey);
+
+
+    /**
+     * Returns all existing keys, and their values, that are prefixed by the
+     * specified partial {@link CompositeKey}.
+     * <p>
+     * It combines the attributes and the objectType to form a partial composite key.
+     * <p>
+     * If a full composite key is specified, it will not match itself, resulting
+     * in no keys being returned.
+     * <p>
+     * This method takes responsibility to correctly combine Object type and attributes
+     * creating a {@link CompositeKey} and behaves exactly
+     * as {@link ChaincodeStub#getStateByPartialCompositeKey(CompositeKey)}.
+     * </p>
+     * Call close() on the returned {@link QueryResultsIterator#close()} object when done.
+     *
+     * @param objectType: ObjectType of the compositeKey
+     * @param attributes: Attributes of the composite key
+     * @return an {@link Iterable} of {@link KeyValue}
+     */
+    QueryResultsIterator<KeyValue> getStateByPartialCompositeKey(String objectType, String... attributes);
+
+    /**
+     * Returns all existing keys, and their values, that are prefixed by the
+     * specified partial {@link CompositeKey}.
+     * <p>
+     * If a full composite key is specified, it will not match itself, resulting
+     * in no keys being returned.
+     *
+     * @param compositeKey partial composite key
+     * @return an {@link Iterable} of {@link KeyValue}
+     */
+    QueryResultsIterator<KeyValue> getStateByPartialCompositeKey(CompositeKey compositeKey);
+
 
     /**
      * Given a set of attributes, this method combines these attributes to

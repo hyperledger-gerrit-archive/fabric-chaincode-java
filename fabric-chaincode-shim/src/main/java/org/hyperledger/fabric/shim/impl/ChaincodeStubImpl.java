@@ -187,6 +187,10 @@ class ChaincodeStubImpl implements ChaincodeStub {
         }
         CompositeKey.validateSimpleKeys(startKey, endKey);
 
+        return executeGetStateByRange(startKey, endKey);
+    }
+
+    private QueryResultsIterator<KeyValue> executeGetStateByRange(String startKey, String endKey) {
         return new QueryResultsIteratorImpl<KeyValue>(this.handler, getChannelId(), getTxId(),
                 handler.getStateByRange(getChannelId(), getTxId(), "", startKey, endKey),
                 queryResultBytesToKv.andThen(KeyValueImpl::new)
@@ -202,15 +206,36 @@ class ChaincodeStubImpl implements ChaincodeStub {
             }
         }
 
-        ;
     };
 
     @Override
     public QueryResultsIterator<KeyValue> getStateByPartialCompositeKey(String compositeKey) {
-        if (compositeKey == null || compositeKey.isEmpty()) {
-            compositeKey = UNSPECIFIED_KEY;
+
+        CompositeKey key;
+
+        if (compositeKey.startsWith(CompositeKey.NAMESPACE)) {
+            key = CompositeKey.parseCompositeKey(compositeKey);
+        } else {
+            key = new CompositeKey(compositeKey);
         }
-        return getStateByRange(compositeKey, compositeKey + MAX_UNICODE_RUNE);
+
+        return getStateByPartialCompositeKey(key);
+    }
+
+    @Override
+    public QueryResultsIterator<KeyValue> getStateByPartialCompositeKey(String objectType, String... attributes) {
+        return getStateByPartialCompositeKey(new CompositeKey(objectType, attributes));
+    }
+
+    @Override
+    public QueryResultsIterator<KeyValue> getStateByPartialCompositeKey(CompositeKey compositeKey) {
+        if (compositeKey == null) {
+            compositeKey = new CompositeKey(UNSPECIFIED_KEY);
+        }
+
+        String cKeyAsString = compositeKey.toString();
+
+        return executeGetStateByRange(cKeyAsString, cKeyAsString + MAX_UNICODE_RUNE);
     }
 
     @Override
@@ -248,7 +273,6 @@ class ChaincodeStubImpl implements ChaincodeStub {
             }
         }
 
-        ;
     };
 
     @Override
