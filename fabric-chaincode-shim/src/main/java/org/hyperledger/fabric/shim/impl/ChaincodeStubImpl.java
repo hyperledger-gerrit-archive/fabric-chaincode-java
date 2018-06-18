@@ -187,11 +187,15 @@ class ChaincodeStubImpl implements ChaincodeStub {
         }
         CompositeKey.validateSimpleKeys(startKey, endKey);
 
-        return new QueryResultsIteratorImpl<KeyValue>(this.handler, getChannelId(), getTxId(),
-                handler.getStateByRange(getChannelId(), getTxId(), "", startKey, endKey),
-                queryResultBytesToKv.andThen(KeyValueImpl::new)
-        );
-    }
+		return executeGetStateByRange(startKey, endKey);
+	}
+
+	private QueryResultsIterator<KeyValue> executeGetStateByRange(String startKey, String endKey) {
+		return new QueryResultsIteratorImpl<KeyValue>(this.handler, getChannelId(), getTxId(),
+				handler.getStateByRange(getChannelId(), getTxId(), "", startKey, endKey),
+				queryResultBytesToKv.andThen(KeyValueImpl::new)
+		);
+	}
 
     private Function<QueryResultBytes, KV> queryResultBytesToKv = new Function<QueryResultBytes, KV>() {
         public KV apply(QueryResultBytes queryResultBytes) {
@@ -205,13 +209,35 @@ class ChaincodeStubImpl implements ChaincodeStub {
         ;
     };
 
-    @Override
-    public QueryResultsIterator<KeyValue> getStateByPartialCompositeKey(String compositeKey) {
-        if (compositeKey == null || compositeKey.isEmpty()) {
-            compositeKey = UNSPECIFIED_KEY;
-        }
-        return getStateByRange(compositeKey, compositeKey + MAX_UNICODE_RUNE);
-    }
+	@Override
+	public QueryResultsIterator<KeyValue> getStateByPartialCompositeKey(String compositeKey) {
+
+		CompositeKey key;
+
+		if (compositeKey.startsWith(CompositeKey.NAMESPACE)) {
+			key = CompositeKey.parseCompositeKey(compositeKey);
+		} else {
+			key = new CompositeKey(compositeKey);
+		}
+
+		return getStateByPartialCompositeKey(key);
+	}
+
+	@Override
+	public QueryResultsIterator<KeyValue> getStateByPartialCompositeKey(String objectType, String... attributes) {
+		return getStateByPartialCompositeKey(new CompositeKey(objectType, attributes));
+	}
+
+	@Override
+	public QueryResultsIterator<KeyValue> getStateByPartialCompositeKey(CompositeKey compositeKey) {
+		if (compositeKey == null) {
+			compositeKey = new CompositeKey(UNSPECIFIED_KEY);
+		}
+
+		String cKeyAsString = compositeKey.toString();
+
+		return executeGetStateByRange(cKeyAsString, cKeyAsString + MAX_UNICODE_RUNE);
+	}
 
     @Override
     public CompositeKey createCompositeKey(String objectType, String... attributes) {

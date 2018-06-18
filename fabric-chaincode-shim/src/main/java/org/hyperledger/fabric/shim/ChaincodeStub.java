@@ -180,15 +180,31 @@ public interface ChaincodeStub {
      */
     QueryResultsIterator<KeyValue> getStateByPartialCompositeKey(String compositeKey);
 
-    /**
-     * Given a set of attributes, this method combines these attributes to
-     * return a composite key.
-     *
-     * @param objectType A string used as the prefix of the resulting key
-     * @param attributes List of attribute values to concatenate into the key
-     * @return a composite key
-     */
-    CompositeKey createCompositeKey(String objectType, String... attributes);
+	QueryResultsIterator<KeyValue> getStateByPartialCompositeKey(String objectType, String... attributes);
+
+	/**
+	 * Returns all existing keys, and their values, that are prefixed by the
+	 * specified partial {@link CompositeKey}.
+	 *
+	 * If a full composite key is specified, it will not match itself, resulting
+	 * in no keys being returned.
+	 *
+	 * @param compositeKey
+	 *            partial composite key
+	 * @return an {@link Iterable} of {@link KeyValue}
+	 */
+	QueryResultsIterator<KeyValue> getStateByPartialCompositeKey(CompositeKey compositeKey);
+
+
+	/**
+	 * Given a set of attributes, this method combines these attributes to
+	 * return a composite key.
+	 *
+	 * @param objectType A string used as the prefix of the resulting key
+	 * @param attributes List of attribute values to concatenate into the key
+	 * @return a composite key
+	 */
+	CompositeKey createCompositeKey(String objectType, String... attributes);
 
     /**
      * Parses a composite key {@link CompositeKey} from a string.
