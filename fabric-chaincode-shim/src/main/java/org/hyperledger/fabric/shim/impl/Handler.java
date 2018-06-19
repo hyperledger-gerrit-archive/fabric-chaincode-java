@@ -66,30 +66,30 @@ public class Handler {
 
 		fsm.addEvents(
 				//            Event Name              From           To
-				new EventDesc(REGISTERED.toString(),  "created",     "established"),
-				new EventDesc(READY.toString(),       "established", "ready"),
-				new EventDesc(ERROR.toString(),       "init",        "established"),
-				new EventDesc(RESPONSE.toString(),    "init",        "init"),
-				new EventDesc(INIT.toString(),        "ready",       "ready"),
-				new EventDesc(TRANSACTION.toString(), "ready",       "ready"),
-				new EventDesc(RESPONSE.toString(),    "ready",       "ready"),
-				new EventDesc(ERROR.toString(),       "ready",       "ready"),
-				new EventDesc(COMPLETED.toString(),   "init",        "ready"),
-				new EventDesc(COMPLETED.toString(),   "ready",       "ready")
-				);
+				new EventDesc(REGISTERED.toString(), "created", "established"),
+				new EventDesc(READY.toString(), "established", "ready"),
+				new EventDesc(ERROR.toString(), "init", "established"),
+				new EventDesc(RESPONSE.toString(), "init", "init"),
+				new EventDesc(INIT.toString(), "ready", "ready"),
+				new EventDesc(TRANSACTION.toString(), "ready", "ready"),
+				new EventDesc(RESPONSE.toString(), "ready", "ready"),
+				new EventDesc(ERROR.toString(), "ready", "ready"),
+				new EventDesc(COMPLETED.toString(), "init", "ready"),
+				new EventDesc(COMPLETED.toString(), "ready", "ready")
+		);
 
 		fsm.addCallbacks(
 				//         Type          Trigger                Callback
 				new CBDesc(BEFORE_EVENT, REGISTERED.toString(), (event) -> beforeRegistered(event)),
-				new CBDesc(AFTER_EVENT,  RESPONSE.toString(),   (event) -> afterResponse(event)),
-				new CBDesc(AFTER_EVENT,  ERROR.toString(),      (event) -> afterError(event)),
-				new CBDesc(BEFORE_EVENT, INIT.toString(),       (event) -> beforeInit(event)),
-				new CBDesc(BEFORE_EVENT, TRANSACTION.toString(),(event) -> beforeTransaction(event))
-				);
+				new CBDesc(AFTER_EVENT, RESPONSE.toString(), (event) -> afterResponse(event)),
+				new CBDesc(AFTER_EVENT, ERROR.toString(), (event) -> afterError(event)),
+				new CBDesc(BEFORE_EVENT, INIT.toString(), (event) -> beforeInit(event)),
+				new CBDesc(BEFORE_EVENT, TRANSACTION.toString(), (event) -> beforeTransaction(event))
+		);
 	}
 
 	private String getTxKey(final String channelId, final String txid) {
-		return channelId+txid;
+		return channelId + txid;
 	}
 
 	private void triggerNextState(ChaincodeMessage message, boolean send) {
@@ -134,7 +134,7 @@ public class Handler {
 		String key = getTxKey(channelId, txId);
 		final Channel<ChaincodeMessage> channel = responseChannel.remove(key);
 		if (channel != null) channel.close();
-		if (logger.isTraceEnabled()) logger.trace(format("[%-8s]Response channel closed.",txId));
+		if (logger.isTraceEnabled()) logger.trace(format("[%-8s]Response channel closed.", txId));
 	}
 
 	/**
@@ -495,7 +495,12 @@ public class Handler {
 	}
 
 	private static ChaincodeMessage newDeleteStateEventMessage(final String channelId, final String txId, final String key) {
-		return newEventMessage(DEL_STATE, channelId, txId, ByteString.copyFromUtf8(key));
+        return newEventMessage(DEL_STATE, channelId, txId, DelState.newBuilder()
+                        .setCollection("")
+                        .setKey(key)
+                        .build()
+                        .toByteString()
+        );
 	}
 
 	private static ChaincodeMessage newErrorEventMessage(final String channelId, final String txId, final Throwable throwable) {
