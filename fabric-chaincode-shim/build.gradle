@@ -93,7 +93,7 @@ task licenseCheck {
     def missing = new LinkedList<File>()
     sourceSets.forEach {
         sourceSet ->
-            sourceSet.allSource.findAll { !it.path.contains("build") }.each {
+            sourceSet.allSource.findAll { !it.path.contains("build") && !it.path.contains("test/resources")}.each {
                 file ->
                     BufferedReader r = new BufferedReader(new FileReader(file))
                     def line, hasSPDX = false, hasTraditional = false

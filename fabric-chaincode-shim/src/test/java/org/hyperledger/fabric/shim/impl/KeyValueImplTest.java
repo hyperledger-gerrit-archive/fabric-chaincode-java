@@ -13,6 +13,7 @@ import org.junit.Test;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.is;
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertThat;
 
 public class KeyValueImplTest {
@@ -50,6 +51,18 @@ public class KeyValueImplTest {
 				.setValue(ByteString.copyFromUtf8("value"))
 				.build());
 		assertThat(kv.getStringValue(), is(equalTo("value")));
+	}
+
+	@Test
+	public void testHashCode() {
+		KeyValueImpl kv = new KeyValueImpl(KV.newBuilder()
+				.build());
+
+		int expectedHashCode = 31;
+		expectedHashCode = expectedHashCode + "".hashCode();
+		expectedHashCode = expectedHashCode * 31 + ByteString.copyFromUtf8("").hashCode();
+
+		assertEquals("Wrong hashcode", expectedHashCode, kv.hashCode());
 	}
 
 }
