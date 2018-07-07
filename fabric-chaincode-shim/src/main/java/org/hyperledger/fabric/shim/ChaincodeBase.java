@@ -76,22 +76,21 @@ public abstract class ChaincodeBase implements Chaincode {
      * @param args command line arguments
      */
     public void start(String[] args) {
-        processEnvironmentOptions();
-        processCommandLineOptions(args);
-        initializeLogging();
         try {
+            processEnvironmentOptions();
+            processCommandLineOptions(args);
+            initializeLogging();
             validateOptions();
             final ChaincodeID chaincodeId = ChaincodeID.newBuilder().setName(this.id).build();
             final ManagedChannelBuilder<?> channelBuilder = newChannelBuilder();
             final Handler handler = new Handler(chaincodeId, this);
             new ChaincodeSupportStream(channelBuilder, handler::onChaincodeMessage, handler::nextOutboundChaincodeMessage);
-
-        } catch (IllegalArgumentException e) {
+        } catch (Exception e) {
             logger.fatal("Chaincode could not start", e);
         }
     }
 
-    private void initializeLogging() {
+    void initializeLogging() {
         System.setProperty("java.util.logging.SimpleFormatter.format", "%1$tH:%1$tM:%1$tS:%1$tL %4$-7.7s %2$s %5$s%6$s%n");
         final Logger rootLogger = Logger.getLogger("");
         for (java.util.logging.Handler handler : rootLogger.getHandlers()) {
@@ -110,10 +109,18 @@ public abstract class ChaincodeBase implements Chaincode {
             });
         }
         // set logging level of shim logger
-        Logger.getLogger("org.hyperledger.fabric.shim").setLevel(mapLevel(System.getenv("CORE_CHAINCODE_LOGGING_SHIM")));
+        String shimLogLevel = System.getenv("CORE_CHAINCODE_LOGGING_SHIM");
+        if (shimLogLevel == null) {
+            shimLogLevel = "INFO";
+        }
+        Logger.getLogger("org.hyperledger.fabric.shim").setLevel(mapLevel(shimLogLevel));
 
         // set logging level of chaincode logger
-        Logger.getLogger(this.getClass().getPackage().getName()).setLevel(mapLevel(System.getenv("CORE_CHAINCODE_LOGGING_LEVEL")));
+        String chaincodeLogLevel = System.getenv("CORE_CHAINCODE_LOGGING_LEVEL");
+        if (chaincodeLogLevel == null) {
+            chaincodeLogLevel = "INFO";
+        }
+        Logger.getLogger(this.getClass().getPackage().getName()).setLevel(mapLevel(chaincodeLogLevel));
 
     }
 
@@ -135,7 +142,7 @@ public abstract class ChaincodeBase implements Chaincode {
         }
     }
 
-    private void validateOptions() {
+    void validateOptions() {
         if (this.id == null) {
             throw new IllegalArgumentException(format("The chaincode id must be specified using either the -i or --i command line options or the %s environment variable.", CORE_CHAINCODE_ID_NAME));
         }
@@ -152,7 +159,7 @@ public abstract class ChaincodeBase implements Chaincode {
         }
     }
 
-    private void processCommandLineOptions(String[] args) {
+    void processCommandLineOptions(String[] args) {
         Options options = new Options();
         options.addOption("a", "peer.address", true, "Address of peer to connect to");
         options.addOption(null, "peerAddress", true, "Address of peer to connect to");
@@ -182,7 +189,6 @@ public abstract class ChaincodeBase implements Chaincode {
             }
         } catch (Exception e) {
             logger.warn("cli parsing failed with exception", e);
-
         }
 
         logger.info("<<<<<<<<<<<<<CommandLine options>>>>>>>>>>>>");
@@ -194,7 +200,7 @@ public abstract class ChaincodeBase implements Chaincode {
         logger.info("CORE_TLS_CLIENT_CERT_PATH" + this.tlsClientCertPath);
     }
 
-    private void processEnvironmentOptions() {
+    void processEnvironmentOptions() {
         if (System.getenv().containsKey(CORE_CHAINCODE_ID_NAME)) {
             this.id = System.getenv(CORE_CHAINCODE_ID_NAME);
         }
@@ -224,33 +230,29 @@ public abstract class ChaincodeBase implements Chaincode {
         logger.info("CORE_TLS_CLIENT_CERT_PATH" + this.tlsClientCertPath);
     }
 
-    private ManagedChannelBuilder<?> newChannelBuilder() {
+    ManagedChannelBuilder<?> newChannelBuilder() throws IOException {
         final NettyChannelBuilder builder = NettyChannelBuilder.forAddress(host, port);
         logger.info("Configuring channel connection to peer.");
 
         if (tlsEnabled) {
-            logger.info("TLS is enabled");
-            try {
-                byte ckb[] = Files.readAllBytes(Paths.get(this.tlsClientKeyPath));
-                byte ccb[] = Files.readAllBytes(Paths.get(this.tlsClientCertPath));
-
-
-                final SslContext sslContext = GrpcSslContexts.forClient()
-                        .trustManager(new File(this.tlsClientRootCertPath))
-                        .keyManager(
-                                new ByteArrayInputStream(Base64.getDecoder().decode(ccb)),
-                                new ByteArrayInputStream(Base64.getDecoder().decode(ckb)))
-                        .build();
-                builder.negotiationType(NegotiationType.TLS);
-                builder.sslContext(sslContext);
-                logger.info("TLS context built: " + sslContext);
-            } catch (IOException e) {
-                logger.fatal("failed connect to peer", e);
-            }
+            builder.negotiationType(NegotiationType.TLS);
+            builder.sslContext(createSSLContext());
         } else {
             builder.usePlaintext(true);
         }
         return builder;
+    }
+
+    SslContext createSSLContext() throws IOException{
+        byte ckb[] = Files.readAllBytes(Paths.get(this.tlsClientKeyPath));
+        byte ccb[] = Files.readAllBytes(Paths.get(this.tlsClientCertPath));
+
+        return GrpcSslContexts.forClient()
+                .trustManager(new File(this.tlsClientRootCertPath))
+                .keyManager(
+                        new ByteArrayInputStream(Base64.getDecoder().decode(ccb)),
+                        new ByteArrayInputStream(Base64.getDecoder().decode(ckb)))
+                .build();
     }
 
     protected static Response newSuccessResponse(String message, byte[] payload) {
@@ -294,5 +296,33 @@ public abstract class ChaincodeBase implements Chaincode {
         final StringWriter buffer = new StringWriter();
         throwable.printStackTrace(new PrintWriter(buffer));
         return buffer.toString().getBytes(StandardCharsets.UTF_8);
+    }
+
+    String getHost() {
+        return host;
+    }
+
+    int getPort() {
+        return port;
+    }
+
+    boolean isTlsEnabled() {
+        return tlsEnabled;
+    }
+
+    String getTlsClientKeyPath() {
+        return tlsClientKeyPath;
+    }
+
+    String getTlsClientCertPath() {
+        return tlsClientCertPath;
+    }
+
+    String getTlsClientRootCertPath() {
+        return tlsClientRootCertPath;
+    }
+
+    String getId() {
+        return id;
     }
 }
