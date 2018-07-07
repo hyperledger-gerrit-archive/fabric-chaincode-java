@@ -12,10 +12,12 @@ import org.hyperledger.fabric.protos.ledger.queryresult.KvQueryResult;
 import org.hyperledger.fabric.shim.ledger.KeyModification;
 import org.junit.Test;
 
+import java.time.Instant;
 import java.util.stream.Stream;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.hamcrest.Matchers.*;
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertThat;
 
 public class KeyModificationImplTest {
@@ -82,6 +84,23 @@ public class KeyModificationImplTest {
 						);
 				assertThat(km.isDeleted(), is(b));
 			});
+	}
+
+	@Test
+	public void testHashCode() {
+		final KeyModification km = new KeyModificationImpl(KvQueryResult.KeyModification.newBuilder()
+				.setIsDelete(false)
+				.build()
+		);
+
+		int expectedHashCode = 31;
+		expectedHashCode = expectedHashCode + 1237;
+		expectedHashCode = expectedHashCode * 31 + Instant.EPOCH.hashCode();
+		expectedHashCode = expectedHashCode * 31 + "".hashCode();
+		expectedHashCode = expectedHashCode * 31 + ByteString.copyFromUtf8("").hashCode();
+
+		assertEquals("Wrong hash code", expectedHashCode, km.hashCode());
+
 	}
 
 }
