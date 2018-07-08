@@ -75,7 +75,7 @@ jacocoTestCoverageVerification {
             includes = ['org.hyperledger.fabric.shim.ledger.*',
                         'org.hyperledger.fabric.shim.impl.ChaincodeStubImpl']
             limit {
-                minimum = 0.9
+                minimum = 0.8
             }
         }
     }
