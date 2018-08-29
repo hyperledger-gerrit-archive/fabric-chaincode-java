@@ -40,6 +40,7 @@ import java.util.Collections;
 import java.util.List;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
+import static java.util.stream.Collectors.toList;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.*;
 import static org.hamcrest.Matchers.contains;
@@ -150,7 +151,7 @@ public class ChaincodeStubImplTest {
         final ChaincodeStubImpl stub = new ChaincodeStubImpl("myc", "txId", handler, Collections.emptyList(), null);
         final String value = "TEST";
         when(handler.getState("myc", "txId", "", "key")).thenReturn(ByteString.copyFromUtf8(value));
-        assertThat(stub.getStringState("key"), is(value));
+        assertThat(stub.getStateUTF8("key"), is(value));
     }
 
     @Test
@@ -176,7 +177,7 @@ public class ChaincodeStubImplTest {
     public void testStringState() {
         final ChaincodeStubImpl stub = new ChaincodeStubImpl("myc", "txId", handler, Collections.emptyList(), null);
         final String value = "TEST";
-        stub.putStringState("key", value);
+        stub.putState("key", value);
         verify(handler).putState("myc", "txId", "", "key", ByteString.copyFromUtf8(value));
     }
 
@@ -528,6 +529,7 @@ public class ChaincodeStubImplTest {
         final String txId = "txId", chaincodeName = "CHAINCODE_ID", channel = "CHAINCODE_CHANNEL";
         final ChaincodeStubImpl stub = new ChaincodeStubImpl(channel, txId, handler, Collections.emptyList(), null);
         final Chaincode.Response expectedResponse = new Chaincode.Response(Status.SUCCESS, "MESSAGE", "PAYLOAD".getBytes(UTF_8));
+
         when(handler.invokeChaincode(channel, txId, chaincodeName, Collections.emptyList())).thenReturn(expectedResponse);
         assertThat(stub.invokeChaincode(chaincodeName, Collections.emptyList()), is(expectedResponse));
 
