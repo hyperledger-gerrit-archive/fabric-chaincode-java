@@ -79,16 +79,6 @@ public interface ChaincodeStub {
     String getChannelId();
 
     /**
-     * Invoke another chaincode using the same transaction context.
-     *
-     * @param chaincodeName Name of chaincode to be invoked.
-     * @param args          Arguments to pass on to the called chaincode.
-     * @param channel       If not specified, the caller's channel is assumed.
-     * @return
-     */
-    Response invokeChaincode(String chaincodeName, List<byte[]> args, String channel);
-
-    /**
      * Returns the byte array value specified by the key, from the ledger.
      *
      * @param key name of the value
@@ -280,10 +270,34 @@ public interface ChaincodeStub {
      *
      * @param chaincodeName Name of chaincode to be invoked.
      * @param args          Arguments to pass on to the called chaincode.
+     * @param channel       If not specified, the caller's channel is assumed.
+     * @return
+     */
+    Response invokeChaincode(String chaincodeName, List<byte[]> args, String channel);
+
+    /**
+     * Invoke another chaincode using the same transaction context.
+     *
+     * @param chaincodeName Name of chaincode to be invoked.
+     * @param args          Arguments to pass on to the called chaincode.
      * @return
      */
     default Response invokeChaincode(String chaincodeName, List<byte[]> args) {
         return invokeChaincode(chaincodeName, args, null);
+    }
+
+    /**
+     * Invoke another chaincode using the same transaction context.
+     * <p>
+     * This is a convenience version of {@link #invokeChaincode(String, List)}.
+     * The string args will be encoded into as UTF-8 bytes.
+     *
+     * @param chaincodeName Name of chaincode to be invoked.
+     * @param args          Arguments to pass on to the called chaincode.
+     * @return
+     */
+    default Response invokeChaincode(final String chaincodeName, final String... args) {
+        return invokeChaincode(chaincodeName, Arrays.asList(args).stream().map(x -> x.getBytes(UTF_8)).collect(toList()), null);
     }
 
     /**
@@ -297,7 +311,11 @@ public interface ChaincodeStub {
      * @param args          Arguments to pass on to the called chaincode.
      * @param channel       If not specified, the caller's channel is assumed.
      * @return
+     *
+     * @depricated use {@link #invokeChaincode(String, List, String)} with argument conversion
+     * {@code args.stream().map(x -> x.getBytes(UTF_8)).collect(toList()}
      */
+    @Deprecated
     default Response invokeChaincodeWithStringArgs(String chaincodeName, List<String> args, String channel) {
         return invokeChaincode(chaincodeName, args.stream().map(x -> x.getBytes(UTF_8)).collect(toList()), channel);
     }
@@ -311,7 +329,11 @@ public interface ChaincodeStub {
      * @param chaincodeName Name of chaincode to be invoked.
      * @param args          Arguments to pass on to the called chaincode.
      * @return
+     *
+     * @deprecated use {@link #invokeChaincode(String, List)} with argument conversion
+     * {@code args.stream().map(x -> x.getBytes(UTF_8)).collect(toList()}
      */
+    @Deprecated
     default Response invokeChaincodeWithStringArgs(String chaincodeName, List<String> args) {
         return invokeChaincodeWithStringArgs(chaincodeName, args, null);
     }
@@ -325,9 +347,27 @@ public interface ChaincodeStub {
      * @param chaincodeName Name of chaincode to be invoked.
      * @param args          Arguments to pass on to the called chaincode.
      * @return
+     *
+     * @deprecated use {@link #invokeChaincode(String, String...)} instead
      */
+    @Deprecated
     default Response invokeChaincodeWithStringArgs(final String chaincodeName, final String... args) {
-        return invokeChaincodeWithStringArgs(chaincodeName, Arrays.asList(args), null);
+        return invokeChaincode(chaincodeName, args);
+    }
+
+
+    /**
+     * Returns the byte array value specified by the key and decoded as a UTF-8
+     * encoded string, from the ledger.
+     *
+     * @param key name of the value
+     * @return value the value read from the ledger
+     *
+     * @deprecated use {@link #getStateUTF8(String)} instead
+     */
+    @Deprecated
+    default String getStringState(String key) {
+        return new String(getState(key), UTF_8);
     }
 
     /**
@@ -337,10 +377,9 @@ public interface ChaincodeStub {
      * @param key name of the value
      * @return value the value read from the ledger
      */
-    default String getStringState(String key) {
+    default String getStateUTF8(String key) {
         return new String(getState(key), UTF_8);
     }
-
     /**
      * Writes the specified value and key into the sidedb collection
      * value converted to byte array.
@@ -371,10 +410,24 @@ public interface ChaincodeStub {
      *
      * @param key   name of the value
      * @param value the value to write to the ledger
+     *
+     * @deprecated use {@link #putState(String, String)} instead
      */
+    @Deprecated
     default void putStringState(String key, String value) {
+        putState(key, value);
+    }
+
+    /**
+     * Writes the specified value and key into the ledger
+     *
+     * @param key   name of the value
+     * @param value the value to write to the ledger
+     */
+    default void putState(String key, String value) {
         putState(key, value.getBytes(UTF_8));
     }
+
 
     /**
      * Returns the CHAINCODE type event that will be posted to interested
