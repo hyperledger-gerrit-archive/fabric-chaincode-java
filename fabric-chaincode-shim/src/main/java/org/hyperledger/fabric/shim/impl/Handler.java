@@ -559,6 +559,10 @@ public class Handler {
         return buffer.toString();
     }
 
+    CCState getState() {
+        return state;
+    }
+
     public enum CCState {
         CREATED,
         ESTABLISHED,
