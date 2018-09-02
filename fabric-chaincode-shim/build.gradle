@@ -73,6 +73,9 @@ jacocoTestCoverageVerification {
             element = 'CLASS'
             excludes = ['org.hyperledger.fabric.shim.helper.Channel',
                         'org.hyperledger.fabric.shim.impl.Handler',
+                        'org.hyperledger.fabric.shim.impl.ChaincodeSupportStream.1']
+            excludes = ['org.hyperledger.fabric.shim.helper.Channel',
+                        'org.hyperledger.fabric.shim.impl.Handler',
                         'org.hyperledger.fabric.shim.impl.Handler.1',
                         'org.hyperledger.fabric.shim.impl.Handler.CCState',
                         'org.hyperledger.fabric.shim.impl.ChaincodeSupportStream',
@@ -82,9 +85,21 @@ jacocoTestCoverageVerification {
                         'org.hyperledger.fabric.shim.impl.QueryResultsIteratorImpl',
                         'org.hyperledger.fabric.shim.impl.QueryResultsIteratorImpl.1']
             limit {
+                minimum = 0.86
                 minimum = 0.8
             }
         }
+
+        rule {
+            element = 'CLASS'
+            includes = ['org.hyperledger.fabric.shim.helper.Channel',
+                        'org.hyperledger.fabric.shim.impl.Handler',
+                        'org.hyperledger.fabric.shim.impl.ChaincodeSupportStream.1']
+            limit {
+                minimum = 0.7
+            }
+        }
+
     }
 }
 

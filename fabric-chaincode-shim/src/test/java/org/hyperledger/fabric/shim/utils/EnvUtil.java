@@ -9,6 +9,9 @@ import java.lang.reflect.Field;
 import java.util.Collections;
 import java.util.Map;
 
+/**
+ * Seting enviroment variables for tests
+ */
 public class EnvUtil {
     public static void setEnv(Map<String, String> newenv) throws Exception {
         try {
