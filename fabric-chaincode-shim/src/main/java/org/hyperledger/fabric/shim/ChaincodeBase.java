@@ -111,14 +111,21 @@ public abstract class ChaincodeBase implements Chaincode {
                 }
             });
         }
+        // set logging level of chaincode logger
+        Level chaincodeLogLevel = mapLevel(System.getenv(CORE_CHAINCODE_LOGGING_LEVEL));
+        Package chaincodePackage = this.getClass().getPackage();
+        if (chaincodePackage != null) {
+            Logger.getLogger(chaincodePackage.getName()).setLevel(chaincodeLogLevel);
+        } else {
+            // If chaincode declared without package, i.e. default package, lets set level to root logger
+            // You never, ever should be here, except chaincode developer don't know java at all
+            // or know it too well and use this to mess with logging level of all packages
+            Logger.getLogger("").setLevel(chaincodeLogLevel);
+        }
+
         // set logging level of shim logger
         Level shimLogLevel = mapLevel(System.getenv(CORE_CHAINCODE_LOGGING_SHIM));
         Logger.getLogger(ChaincodeBase.class.getPackage().getName()).setLevel(shimLogLevel);
-
-        // set logging level of chaincode logger
-        Level chaincodeLogLevel = mapLevel(System.getenv(CORE_CHAINCODE_LOGGING_LEVEL));
-        Logger.getLogger(this.getClass().getPackage().getName()).setLevel(chaincodeLogLevel);
-
     }
 
     private Level mapLevel(String level) {
