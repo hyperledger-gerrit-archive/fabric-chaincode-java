@@ -124,6 +124,14 @@ public interface ChaincodeStub {
     byte[] getState(String key);
 
     /**
+     * retrieves the key-level endorsement policy for <code>key</code>.
+     * Note that this will introduce a read dependency on <code>key</code> in the transaction's readset.
+     * @param key key to get key level endorsement
+     * @return endorsement policy
+     */
+    byte[] getStateValidationParameter(String key);
+
+    /**
      * Puts the specified <code>key</code> and <code>value</code> into the transaction's
      * writeset as a data-write proposal.
      * <p>
@@ -137,6 +145,14 @@ public interface ChaincodeStub {
      * @param value the value to write to the ledger
      */
     void putState(String key, byte[] value);
+
+    /**
+     * Sets the key-level endorsement policy for <code>key</code>.
+     *
+     * @param key key to set key level endorsement
+     * @param value endorsement policy
+     */
+    void setStateValidationParameter(String key, byte[] value);
 
     /**
      * Records the specified <code>key</code> to be deleted in the writeset of
