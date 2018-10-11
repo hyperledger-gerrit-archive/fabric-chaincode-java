@@ -7,6 +7,9 @@ apply plugin: 'com.google.protobuf'
 apply plugin: 'de.undercouch.download'
 apply plugin: 'maven-publish'
 
+apply plugin: 'maven'
+apply plugin: 'signing'
+
 repositories {
     maven { url "https://plugins.gradle.org/m2/" }
     jcenter()
@@ -101,4 +104,64 @@ publishing {
 
 project.tasks.withType(Javadoc).all {
     enabled = false
+}
+
+javadoc {
+    failOnError = false
+    source = sourceSets.main.java
+    classpath = sourceSets.main.compileClasspath
+}
+
+if (JavaVersion.current().isJava8Compatible()) {
+    project.tasks.withType(Javadoc) {
+        options.addStringOption('Xdoclint:none', '-quiet')
+    }
+}
+
+task javadocJar(type: Jar) {
+    classifier = 'javadoc'
+    from javadoc
+}
+
+signing {
+    required {gradle.taskGraph.hasTask(uploadArchives) }
+    sign configurations.archives
+}
+
+uploadArchives {
+    repositories {
+        mavenDeployer {
+            beforeDeployment { MavenDeployment deployment -> signing.signPom(deployment) }
+
+            repository(url: "https://oss.sonatype.org/service/local/staging/deploy/maven2/") {
+                authentication(userName: System.getenv("OSSRH_USER_TOKEN"), password: System.getenv("OSSRH_PWD_TOKEN"))
+            }
+
+            snapshotRepository(url: "https://oss.sonatype.org/content/repositories/snapshots/") {
+                authentication(userName: System.getenv("OSSRH_USER_TOKEN"), password: System.getenv("OSSRH_PWD_TOKEN"))
+            }
+
+            pom.project {
+                name 'JavaChaincodeProtobuf'
+                packaging 'jar'
+                description 'Hyperldger Fabric Java chaincode protobuf files'
+
+                licenses {
+                    license {
+                        name 'The Apache License, Version 2.0'
+                        url 'http://www.apache.org/licenses/LICENSE-2.0.txt'
+                    }
+                }
+            }
+        }
+    }
+}
+
+task sourcesJar(type: Jar) {
+    classifier = 'sources'
+    from sourceSets.main.allSource
+}
+
+artifacts {
+    archives javadocJar, sourcesJar
 }
