@@ -7,6 +7,8 @@
 plugins {
     id 'maven-publish'
     id 'jacoco'
+    id 'maven'
+    id 'signing'
 }
 
 dependencies {
@@ -104,7 +106,7 @@ task licenseCheck {
     def missing = new LinkedList<File>()
     sourceSets.forEach {
         sourceSet ->
-            sourceSet.allSource.findAll { !it.path.contains("build") && !it.path.contains("test/resources")}.each {
+            sourceSet.allSource.findAll { !it.path.contains("build") && !it.path.contains("test/resources") }.each {
                 file ->
                     BufferedReader r = new BufferedReader(new FileReader(file))
                     def line, hasSPDX = false, hasTraditional = false
@@ -150,7 +152,6 @@ task licenseCheck {
     }
 }
 
-
 javadoc {
     failOnError = false
     excludes = ['org/hyperledger/fabric/shim/impl/**',
@@ -166,5 +167,46 @@ if (JavaVersion.current().isJava8Compatible()) {
         options.addStringOption('Xdoclint:none', '-quiet')
     }
 }
+
+task javadocJar(type: Jar) {
+    classifier = 'javadoc'
+    from javadoc
+}
+
+signing {
+    sign configurations.archives
+}
+
+uploadArchives {
+    repositories {
+        mavenDeployer {
+            beforeDeployment { MavenDeployment deployment -> signing.signPom(deployment) }
+
+            repository(url: "https://oss.sonatype.org/service/local/staging/deploy/maven2/") {
+                authentication(userName: System.getenv("OSSRH_USER_TOKEN"), password: System.getenv("OSSRH_PWD_TOKEN"))
+            }
+
+            snapshotRepository(url: "https://oss.sonatype.org/content/repositories/snapshots/") {
+                authentication(userName: System.getenv("OSSRH_USER_TOKEN"), password: System.getenv("OSSRH_PWD_TOKEN"))
+            }
+
+            pom.project {
+                name 'Hyperledger Fabric Chaincode Java Shim'
+                packaging 'jar'
+            }
+        }
+    }
+}
+
+task sourcesJar(type: Jar) {
+    classifier = 'sources'
+    from sourceSets.main.allSource
+}
+
+artifacts {
+    archives javadocJar, sourcesJar
+}
+
+
 
 build.dependsOn licenseCheck
