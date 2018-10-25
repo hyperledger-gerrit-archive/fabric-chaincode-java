@@ -15,6 +15,7 @@ import org.hyperledger.fabric.protos.common.Common.SignatureHeader;
 import org.hyperledger.fabric.protos.ledger.queryresult.KvQueryResult;
 import org.hyperledger.fabric.protos.ledger.queryresult.KvQueryResult.KV;
 import org.hyperledger.fabric.protos.peer.ChaincodeEventPackage.ChaincodeEvent;
+import org.hyperledger.fabric.protos.peer.ChaincodeShim;
 import org.hyperledger.fabric.protos.peer.ChaincodeShim.QueryResponse;
 import org.hyperledger.fabric.protos.peer.ChaincodeShim.QueryResultBytes;
 import org.hyperledger.fabric.protos.peer.ProposalPackage.ChaincodeProposalPayload;
@@ -23,6 +24,9 @@ import org.hyperledger.fabric.protos.peer.ProposalPackage.SignedProposal;
 import org.hyperledger.fabric.shim.Chaincode;
 import org.hyperledger.fabric.shim.Chaincode.Response.Status;
 import org.hyperledger.fabric.shim.ledger.CompositeKey;
+import org.hyperledger.fabric.shim.ledger.KeyValue;
+import org.hyperledger.fabric.shim.ledger.QueryResultsIterator;
+import org.hyperledger.fabric.shim.ledger.QueryResultsIteratorWithMetadata;
 import org.junit.Assert;
 import org.junit.Rule;
 import org.junit.Test;
@@ -31,6 +35,7 @@ import org.mockito.Mock;
 import org.mockito.junit.MockitoJUnit;
 import org.mockito.junit.MockitoRule;
 import org.mockito.quality.Strictness;
+import org.mockito.stubbing.OngoingStubbing;
 
 import javax.xml.bind.DatatypeConverter;
 import java.time.Instant;
@@ -195,23 +200,57 @@ public class ChaincodeStubImplTest {
         final ChaincodeStubImpl stub = new ChaincodeStubImpl("myc", "txId", handler, Collections.emptyList(), null);
         final String startKey = "START";
         final String endKey = "END";
-        final KV[] keyValues = new KV[]{
-                KV.newBuilder()
-                        .setKey("A")
-                        .setValue(ByteString.copyFromUtf8("Value of A"))
-                        .build(),
-                KV.newBuilder()
-                        .setKey("B")
-                        .setValue(ByteString.copyFromUtf8("Value of B"))
-                        .build()
-        };
-        final QueryResponse value = QueryResponse.newBuilder()
-                .setHasMore(false)
-                .addResults(QueryResultBytes.newBuilder().setResultBytes(keyValues[0].toByteString()))
-                .addResults(QueryResultBytes.newBuilder().setResultBytes(keyValues[1].toByteString()))
+        KV[] keyValues = prepareKeyValuePairs(2);
+        final QueryResponse value = prepareQueryResponseForRange(startKey, endKey, keyValues, false);
+        when(handler.getStateByRange("myc", "txId", "", startKey, endKey, null)).thenReturn(value);
+        QueryResultsIterator<KeyValue> queryResultsIterator = stub.getStateByRange(startKey, endKey);
+        assertThat(queryResultsIterator, contains(Arrays.stream(keyValues).map(KeyValueImpl::new).toArray()));
+    }
+
+    @Test
+    public void testGetStateByRangeWithPagination() {
+        final ChaincodeStubImpl stub = new ChaincodeStubImpl("myc", "txId", handler, Collections.emptyList(), null);
+        final String startKey = "START";
+        final String endKey = "END";
+        KV[] keyValues = prepareKeyValuePairs(2);
+        final QueryResponse value = prepareQueryResponseForRange(startKey, endKey, keyValues, true);
+
+        ChaincodeShim.QueryMetadata queryMetadata = ChaincodeShim.QueryMetadata.newBuilder()
+                .setBookmark("aaaa")
+                .setPageSize(1)
                 .build();
-        when(handler.getStateByRange("myc", "txId", "", startKey, endKey)).thenReturn(value);
-        assertThat(stub.getStateByRange(startKey, endKey), contains(Arrays.stream(keyValues).map(KeyValueImpl::new).toArray()));
+
+        when(handler.getStateByRange("myc", "txId", "", startKey, endKey, queryMetadata.toByteString())).thenReturn(value);
+        QueryResultsIteratorWithMetadata<KeyValue> queryResultsIterator = stub.getStateByRangeWithPagination(startKey, endKey, 1, "aaaa");
+//        assertThat(queryResultsIterator, contains(Arrays.stream(keyValues).map(KeyValueImpl::new)));
+//        assertThat((QueryResultsIterator)queryResultsIterator, contains(Arrays.stream(keyValues).map(KeyValueImpl::new).toArray()));
+        assertThat(queryResultsIterator.getMetadata().getFetchedRecordsCount(), is(2));
+        assertThat(queryResultsIterator.getMetadata().getBookmark(), is("bbbb"));
+    }
+
+    private KV[] prepareKeyValuePairs(int count) {
+        final KV[] keyValue = new KV[count];
+        for(int i = 0; i < count; i++) {
+            keyValue[i] = KV.newBuilder()
+                    .setKey("Key" + i)
+                    .setValue(ByteString.copyFromUtf8("Value of Key" + i))
+                    .build();
+        }
+        return keyValue;
+    }
+
+    private QueryResponse prepareQueryResponseForRange(String startKey, String endKey, KV[] keyValues, boolean createMetadata) {
+        QueryResponse.Builder builder = QueryResponse.newBuilder()
+                .setHasMore(false);
+        Arrays.stream(keyValues).forEach(kv -> builder.addResults(QueryResultBytes.newBuilder().setResultBytes(kv.toByteString())));
+        if (createMetadata) {
+            ChaincodeShim.QueryResponseMetadata qrm = ChaincodeShim.QueryResponseMetadata.newBuilder()
+                    .setBookmark("bbbb")
+                    .setFetchedRecordsCount(2)
+                    .build();
+            builder.setMetadata(qrm.toByteString());
+        }
+        return builder.build();
     }
 
     @Test
@@ -221,11 +260,11 @@ public class ChaincodeStubImplTest {
 
         stub.getStateByPartialCompositeKey("KEY");
         String key = new CompositeKey("KEY").toString();
-        verify(handler).getStateByRange("myc", "txId", "", key, key + "\udbff\udfff");
+        verify(handler).getStateByRange("myc", "txId", "", key, key + "\udbff\udfff", null);
 
         stub.getStateByPartialCompositeKey("");
         key = new CompositeKey("").toString();
-        verify(handler).getStateByRange("myc", "txId", "", key, key + "\udbff\udfff");
+        verify(handler).getStateByRange("myc", "txId", "", key, key + "\udbff\udfff", null);
     }
 
     @Test
@@ -234,7 +273,7 @@ public class ChaincodeStubImplTest {
         ChaincodeStubImpl stub = prepareStubAndMockHandler();
         CompositeKey cKey = new CompositeKey("KEY", "attr1", "attr2");
         stub.getStateByPartialCompositeKey(cKey.toString());
-        verify(handler).getStateByRange("myc", "txId", "", cKey.toString(), cKey.toString() + "\udbff\udfff");
+        verify(handler).getStateByRange("myc", "txId", "", cKey.toString(), cKey.toString() + "\udbff\udfff", null);
 
     }
 
@@ -244,7 +283,7 @@ public class ChaincodeStubImplTest {
         ChaincodeStubImpl stub = prepareStubAndMockHandler();
         CompositeKey cKey = new CompositeKey("KEY", "attr1", "attr2", "attr3");
         stub.getStateByPartialCompositeKey("KEY", "attr1", "attr2", "attr3");
-        verify(handler).getStateByRange("myc", "txId", "", cKey.toString(), cKey.toString() + "\udbff\udfff");
+        verify(handler).getStateByRange("myc", "txId", "", cKey.toString(), cKey.toString() + "\udbff\udfff", null);
 
     }
 
@@ -255,31 +294,56 @@ public class ChaincodeStubImplTest {
 
         CompositeKey key = new CompositeKey("KEY");
         stub.getStateByPartialCompositeKey(key);
-        verify(handler).getStateByRange("myc", "txId", "", key.toString(), key.toString() + "\udbff\udfff");
+        verify(handler).getStateByRange("myc", "txId", "", key.toString(), key.toString() + "\udbff\udfff", null);
 
         key = new CompositeKey("");
         stub.getStateByPartialCompositeKey(key);
-        verify(handler).getStateByRange("myc", "txId", "", key.toString(), key.toString() + "\udbff\udfff");
+        verify(handler).getStateByRange("myc", "txId", "", key.toString(), key.toString() + "\udbff\udfff", null);
+    }
+
+    @Test
+    public void testGetStateByPartialCompositeKeyWithPagination() {
+        ChaincodeShim.QueryMetadata queryMetadata = ChaincodeShim.QueryMetadata.newBuilder()
+                .setBookmark("aaaa")
+                .setPageSize(1)
+                .build();
+
+        ChaincodeStubImpl stub = prepareStubAndMockHandler(true, queryMetadata.toByteString());
+
+        CompositeKey key = new CompositeKey("KEY");
+        QueryResultsIteratorWithMetadata<KeyValue> queryResultsIterator = stub.getStateByPartialCompositeKeyWithPagination(key, 1, "aaaa");
+        verify(handler).getStateByRange("myc", "txId", "", key.toString(), key.toString() + "\udbff\udfff", queryMetadata.toByteString());
+        assertThat(queryResultsIterator.getMetadata().getFetchedRecordsCount(), is(2));
+        assertThat(queryResultsIterator.getMetadata().getBookmark(), is("bbbb"));
+
+
+        key = new CompositeKey("");
+        queryResultsIterator = stub.getStateByPartialCompositeKeyWithPagination(key,1, "aaaa");
+        verify(handler).getStateByRange("myc", "txId", "", key.toString(), key.toString() + "\udbff\udfff", queryMetadata.toByteString());
+        assertThat(queryResultsIterator.getMetadata().getFetchedRecordsCount(), is(2));
+        assertThat(queryResultsIterator.getMetadata().getBookmark(), is("bbbb"));
     }
 
     private ChaincodeStubImpl prepareStubAndMockHandler() {
+        return prepareStubAndMockHandler(false, null);
+    }
+
+    private ChaincodeStubImpl prepareStubAndMockHandler(boolean createMetadata, ByteString metadata) {
         final ChaincodeStubImpl stub = new ChaincodeStubImpl("myc", "txId", handler, Collections.emptyList(), null);
-        final KV[] keyValues = new KV[]{
-                KV.newBuilder()
-                        .setKey("A")
-                        .setValue(ByteString.copyFromUtf8("Value of A"))
-                        .build(),
-                KV.newBuilder()
-                        .setKey("B")
-                        .setValue(ByteString.copyFromUtf8("Value of B"))
-                        .build()
-        };
-        final QueryResponse value = QueryResponse.newBuilder()
-                .setHasMore(false)
-                .addResults(QueryResultBytes.newBuilder().setResultBytes(keyValues[0].toByteString()))
-                .addResults(QueryResultBytes.newBuilder().setResultBytes(keyValues[1].toByteString()))
-                .build();
-        when(handler.getStateByRange(anyString(), anyString(), anyString(), anyString(), anyString())).thenReturn(value);
+        final KV[] keyValues = prepareKeyValuePairs(2);
+
+        QueryResponse.Builder builder = QueryResponse.newBuilder()
+                .setHasMore(false);
+        Arrays.stream(keyValues).forEach(kv -> builder.addResults(QueryResultBytes.newBuilder().setResultBytes(kv.toByteString())));
+        if (createMetadata) {
+            ChaincodeShim.QueryResponseMetadata qrm = ChaincodeShim.QueryResponseMetadata.newBuilder()
+                    .setBookmark("bbbb")
+                    .setFetchedRecordsCount(2)
+                    .build();
+            builder.setMetadata(qrm.toByteString());
+        }
+        final QueryResponse value = builder.build();
+        when(handler.getStateByRange(anyString(), anyString(), anyString(), anyString(), anyString(), eq(metadata))).thenReturn(value);
 
         return stub;
     }
@@ -320,7 +384,7 @@ public class ChaincodeStubImplTest {
                 .addResults(QueryResultBytes.newBuilder().setResultBytes(keyValues[0].toByteString()))
                 .addResults(QueryResultBytes.newBuilder().setResultBytes(keyValues[1].toByteString()))
                 .build();
-        when(handler.getQueryResult("myc", "txId", "", "QUERY")).thenReturn(value);
+        when(handler.getQueryResult("myc", "txId", "", "QUERY", null)).thenReturn(value);
         assertThat(stub.getQueryResult("QUERY"), contains(Arrays.stream(keyValues).map(KeyValueImpl::new).toArray()));
     }
 
@@ -332,7 +396,7 @@ public class ChaincodeStubImplTest {
                 .setHasMore(false)
                 .addResults(QueryResultBytes.newBuilder().setResultBytes(ByteString.copyFromUtf8("exception")))
                 .build();
-        when(handler.getQueryResult(channelId, txId, "", query)).thenReturn(value);
+        when(handler.getQueryResult(channelId, txId, "", query, null)).thenReturn(value);
         try {
             stub.getQueryResult(query).iterator().next();
         } catch (RuntimeException e) {
@@ -463,7 +527,7 @@ public class ChaincodeStubImplTest {
                 .addResults(QueryResultBytes.newBuilder().setResultBytes(keyValues[0].toByteString()))
                 .addResults(QueryResultBytes.newBuilder().setResultBytes(keyValues[1].toByteString()))
                 .build();
-        when(handler.getStateByRange("myc", "txId", "testcoll", startKey, endKey)).thenReturn(value);
+        when(handler.getStateByRange("myc", "txId", "testcoll", startKey, endKey, null)).thenReturn(value);
         assertThat(stub.getPrivateDataByRange("testcoll", startKey, endKey), contains(Arrays.stream(keyValues).map(KeyValueImpl::new).toArray()));
 
         try {
@@ -484,12 +548,12 @@ public class ChaincodeStubImplTest {
 
         CompositeKey key = new CompositeKey("KEY");
         stub.getPrivateDataByPartialCompositeKey(TEST_COLLECTION, "KEY");
-        verify(handler).getStateByRange("myc", "txId", TEST_COLLECTION, key.toString(), key.toString() + "\udbff\udfff");
+        verify(handler).getStateByRange("myc", "txId", TEST_COLLECTION, key.toString(), key.toString() + "\udbff\udfff", null);
 
         key = new CompositeKey("");
         stub.getPrivateDataByPartialCompositeKey(TEST_COLLECTION, (String) null);
         stub.getPrivateDataByPartialCompositeKey(TEST_COLLECTION, "");
-        verify(handler, times(2)).getStateByRange("myc", "txId", TEST_COLLECTION, key.toString(), key.toString() + "\udbff\udfff");
+        verify(handler, times(2)).getStateByRange("myc", "txId", TEST_COLLECTION, key.toString(), key.toString() + "\udbff\udfff", null);
     }
 
     @Test
@@ -499,7 +563,7 @@ public class ChaincodeStubImplTest {
         CompositeKey cKey = new CompositeKey("KEY", "attr1", "attr2");
         stub.getPrivateDataByPartialCompositeKey(TEST_COLLECTION, cKey.toString());
 
-        verify(handler).getStateByRange("myc", "txId", TEST_COLLECTION, cKey.toString(), cKey.toString() + "\udbff\udfff");
+        verify(handler).getStateByRange("myc", "txId", TEST_COLLECTION, cKey.toString(), cKey.toString() + "\udbff\udfff", null);
     }
 
     @Test
@@ -508,7 +572,7 @@ public class ChaincodeStubImplTest {
         ChaincodeStubImpl stub = prepareStubAndMockHandler();
         CompositeKey cKey = new CompositeKey("KEY", "attr1", "attr2", "attr3");
         stub.getPrivateDataByPartialCompositeKey(TEST_COLLECTION, "KEY", "attr1", "attr2", "attr3");
-        verify(handler).getStateByRange("myc", "txId", TEST_COLLECTION, cKey.toString(), cKey.toString() + "\udbff\udfff");
+        verify(handler).getStateByRange("myc", "txId", TEST_COLLECTION, cKey.toString(), cKey.toString() + "\udbff\udfff", null);
 
     }
 
@@ -519,11 +583,11 @@ public class ChaincodeStubImplTest {
 
         CompositeKey key = new CompositeKey("KEY");
         stub.getPrivateDataByPartialCompositeKey(TEST_COLLECTION, key);
-        verify(handler).getStateByRange("myc", "txId", TEST_COLLECTION, key.toString(), key.toString() + "\udbff\udfff");
+        verify(handler).getStateByRange("myc", "txId", TEST_COLLECTION, key.toString(), key.toString() + "\udbff\udfff", null);
 
         key = new CompositeKey("");
         stub.getPrivateDataByPartialCompositeKey(TEST_COLLECTION, key);
-        verify(handler).getStateByRange("myc", "txId", TEST_COLLECTION, key.toString(), key.toString() + "\udbff\udfff");
+        verify(handler).getStateByRange("myc", "txId", TEST_COLLECTION, key.toString(), key.toString() + "\udbff\udfff", null);
     }
 
     @Test
@@ -544,7 +608,7 @@ public class ChaincodeStubImplTest {
                 .addResults(QueryResultBytes.newBuilder().setResultBytes(keyValues[0].toByteString()))
                 .addResults(QueryResultBytes.newBuilder().setResultBytes(keyValues[1].toByteString()))
                 .build();
-        when(handler.getQueryResult("myc", "txId", "testcoll", "QUERY")).thenReturn(value);
+        when(handler.getQueryResult("myc", "txId", "testcoll", "QUERY", null)).thenReturn(value);
         assertThat(stub.getPrivateDataQueryResult("testcoll", "QUERY"), contains(Arrays.stream(keyValues).map(KeyValueImpl::new).toArray()));
 
         try {
@@ -568,7 +632,7 @@ public class ChaincodeStubImplTest {
                 .setHasMore(false)
                 .addResults(QueryResultBytes.newBuilder().setResultBytes(ByteString.copyFromUtf8("exception")))
                 .build();
-        when(handler.getQueryResult(channelId, txId, "testcoll", query)).thenReturn(value);
+        when(handler.getQueryResult(channelId, txId, "testcoll", query, null)).thenReturn(value);
         try {
             stub.getPrivateDataQueryResult("testcoll", query).iterator().next();
         } catch (RuntimeException e) {
