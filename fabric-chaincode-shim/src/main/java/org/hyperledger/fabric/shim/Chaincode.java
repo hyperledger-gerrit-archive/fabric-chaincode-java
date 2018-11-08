@@ -31,7 +31,7 @@ public interface Chaincode {
      * Wrapper around protobuf Response, contains status, message and payload. Object returned by
      * call to {@link #init(ChaincodeStub)} and{@link #invoke(ChaincodeStub)}
      */
-    public static class Response {
+    class Response {
 
         private final Status status;
         private final String message;
@@ -64,6 +64,7 @@ public interface Chaincode {
          */
         public enum Status {
             SUCCESS(200),
+            ERRORTHRESHOLD(400),
             INTERNAL_SERVER_ERROR(500);
 
             private static final Map<Integer, Status> codeToStatus = new HashMap<>();
