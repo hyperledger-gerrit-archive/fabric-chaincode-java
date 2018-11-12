@@ -27,8 +27,7 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.fail;
 
-
-public class SACCIntegrationTest {
+public class KotlinIntegrationTest {
     @ClassRule
     public static DockerComposeContainer env = new DockerComposeContainer(
             new File("src/test/resources/basic-network/docker-compose.yml")
@@ -56,7 +55,7 @@ public class SACCIntegrationTest {
     }
 
     @Test
-    public void TestSACCChaincodeInstallInstantiateInvokeQuery() throws Exception {
+    public void TestKotlinExampleChaincodeInstallInstantiateInvokeQuery() throws Exception {
 
         final CryptoSuite crypto = CryptoSuite.Factory.getCryptoSuite();
 
@@ -70,7 +69,7 @@ public class SACCIntegrationTest {
         Channel myChannel = Utils.getMyChannel(client);
 
         System.out.println("Installing chaincode fabric-chaincode-example-sacc, packaged as gzip stream");
-        InstallProposalRequest installProposalRequest = generateSACCInstallRequest(client);
+        InstallProposalRequest installProposalRequest = generateKotlinExampleInstallRequest(client);
         Collection<ProposalResponse> installResponces = client.sendInstallProposal(installProposalRequest, myChannel.getPeers());
 
         for (ProposalResponse response : installResponces) {
@@ -81,8 +80,7 @@ public class SACCIntegrationTest {
         }
 
         // Instantiating chaincode
-        System.out.println("Instantiating chaincode: {a, 100}");
-        InstantiateProposalRequest instantiateProposalRequest = generateSACCInstantiateRequest(client);
+        InstantiateProposalRequest instantiateProposalRequest = generateKotlinExampleInstantiateRequest(client);
 
         // Sending proposal
         System.out.println("Sending instantiate proposal");
@@ -121,7 +119,7 @@ public class SACCIntegrationTest {
 
         myChannel.getPeers().forEach(peer -> {
             try {
-                assertThat("Peer " + peer.getName() + " doesn't have chaincode javacc installed and instantiated", myChannel.queryInstantiatedChaincodes(peer).stream().map(ccInfo -> ccInfo.getName()).collect(Collectors.toList()), Matchers.contains("javacc"));
+                assertThat("Peer " + peer.getName() + " doesn't have chaincode kotlincc installed and instantiated", myChannel.queryInstantiatedChaincodes(peer).stream().map(ccInfo -> ccInfo.getName()).collect(Collectors.toList()), Matchers.contains("kotlincc"));
             } catch (Exception e) {
                 fail("Accessing instantiate chaincodes on peer " + peer.getName() + " resulted in exception " + e);
             }
@@ -130,7 +128,7 @@ public class SACCIntegrationTest {
         client.setUserContext(Utils.getUser1());
 
         System.out.println("Creating proposal for set(b, 200)");
-        final TransactionProposalRequest proposalRequest = generateSACCInvokeRequest(client, "b", "200");
+        final TransactionProposalRequest proposalRequest = generateKotlinExampleInvokeRequest(client, "Alice", "Bob", "10");
 
         // Send proposal and wait for responses
         System.out.println("Sending proposal for invokeset(b, 200)");
@@ -169,7 +167,7 @@ public class SACCIntegrationTest {
         });
 
         // Creating proposal for query
-        final TransactionProposalRequest queryAProposalRequest = generateSACCQueryRequest(client, "a");
+        final TransactionProposalRequest queryAProposalRequest = generateKotlinExampleQueryRequest(client, "Alice");
 
         // Send proposal and wait for responses
         System.out.println("Sending proposal for get(a)");
@@ -178,11 +176,11 @@ public class SACCIntegrationTest {
         for (ProposalResponse resp : queryAResponses) {
             System.out.println("Responce from peer " + resp.getPeer().getName() + " is \n" + resp.getProposalResponse().getResponse() + "\n" + resp.getProposalResponse().getResponse().getPayload().toStringUtf8());
             assertThat(resp.getProposalResponse().getResponse().getStatus(), Matchers.is(200));
-            assertThat(resp.getProposalResponse().getResponse().getMessage(), Matchers.is("100"));
+            assertThat(resp.getProposalResponse().getResponse().getMessage(), Matchers.is("90"));
         }
 
         // Creating proposal for query
-        final TransactionProposalRequest queryBProposalRequest = generateSACCQueryRequest(client, "b");
+        final TransactionProposalRequest queryBProposalRequest = generateKotlinExampleQueryRequest(client, "Bob");
         // Send proposal and wait for responses
         System.out.println("Sending proposal for get(b)");
         final Collection<ProposalResponse> queryBResponses = myChannel.sendTransactionProposal(queryBProposalRequest, myChannel.getPeers());
@@ -190,21 +188,21 @@ public class SACCIntegrationTest {
         for (ProposalResponse resp : queryBResponses) {
             System.out.println("Responce from peer " + resp.getPeer().getName() + " is \n" + resp.getProposalResponse().getResponse());
             assertThat(resp.getProposalResponse().getResponse().getStatus(), Matchers.is(200));
-            assertThat(resp.getProposalResponse().getResponse().getMessage(), Matchers.is("200"));
+            assertThat(resp.getProposalResponse().getResponse().getMessage(), Matchers.is("210"));
         }
 
 
     }
 
-    static public InstallProposalRequest generateSACCInstallRequest(HFClient client) throws IOException, InvalidArgumentException {
+    static public InstallProposalRequest generateKotlinExampleInstallRequest(HFClient client) throws IOException, InvalidArgumentException {
         final InstallProposalRequest installProposalRequest = client.newInstallProposalRequest();
         final ChaincodeID chaincodeID = ChaincodeID.newBuilder()
-                .setName("javacc")
+                .setName("kotlincc")
                 .setVersion("1.0")
                 .build();
 
 
-        final String chaincodeLocation = "../fabric-chaincode-example-sacc";
+        final String chaincodeLocation = "../fabric-chaincode-example-kotlin";
         installProposalRequest.setChaincodeID(chaincodeID);
         installProposalRequest.setChaincodeLanguage(TransactionRequest.Type.JAVA);
         installProposalRequest.setChaincodeInputStream(Utils.generateTarGzInputStream(new File(chaincodeLocation), "src"));
@@ -213,11 +211,11 @@ public class SACCIntegrationTest {
         return installProposalRequest;
     }
 
-    static public InstantiateProposalRequest generateSACCInstantiateRequest(HFClient client) throws InvalidArgumentException, IOException, ChaincodeEndorsementPolicyParseException {
+    static public InstantiateProposalRequest generateKotlinExampleInstantiateRequest(HFClient client) throws InvalidArgumentException, IOException, ChaincodeEndorsementPolicyParseException {
         // Instantiating chaincode
-        System.out.println("Instantiating chaincode: {a, 100}");
+        System.out.println("Instantiating chaincode: {Alice, 100, Bob, 200}");
         final ChaincodeID chaincodeID = ChaincodeID.newBuilder()
-                .setName("javacc")
+                .setName("kotlincc")
                 .setVersion("1.0")
                 .build();
 
@@ -228,7 +226,7 @@ public class SACCIntegrationTest {
         instantiateProposalRequest.setChaincodeID(chaincodeID);
         instantiateProposalRequest.setFcn("init");
         instantiateProposalRequest.setChaincodeLanguage(TransactionRequest.Type.JAVA);
-        instantiateProposalRequest.setArgs(new String[]{"a", "100"});
+        instantiateProposalRequest.setArgs(new String[]{"Alice", "100", "Bob", "200"});
         Map<String, byte[]> tm = new HashMap<>();
         tm.put("HyperLedgerFabric", "InstantiateProposalRequest:JavaSDK".getBytes(UTF_8));
         tm.put("method", "InstantiateProposalRequest".getBytes(UTF_8));
@@ -242,39 +240,41 @@ public class SACCIntegrationTest {
 
     }
 
-    static public TransactionProposalRequest generateSACCInvokeRequest(HFClient client, String key, String value) {
-        System.out.println("Creating proposal for set(" + key + ", " + value + ")");
+    static public TransactionProposalRequest generateKotlinExampleInvokeRequest(HFClient client, String key1, String key2, String value) {
+        System.out.println("Creating proposal for set(" + key1 + ", " + key2 + ", " + value + ")");
         final TransactionProposalRequest proposalRequest = client.newTransactionProposalRequest();
 
         final ChaincodeID chaincodeID = ChaincodeID.newBuilder()
-                .setName("javacc")
+                .setName("kotlincc")
                 .setVersion("1.0")
                 .build();
 
         proposalRequest.setChaincodeID(chaincodeID);
-        proposalRequest.setFcn("set");
+        proposalRequest.setFcn("invoke");
         proposalRequest.setProposalWaitTime(TimeUnit.SECONDS.toMillis(10));
-        proposalRequest.setArgs(new String[]{key, value});
+        proposalRequest.setArgs(new String[]{key1, key2, value});
 
         return proposalRequest;
 
     }
 
-    static public TransactionProposalRequest generateSACCQueryRequest(HFClient client, String key) {
+    static public TransactionProposalRequest generateKotlinExampleQueryRequest(HFClient client, String key) {
         System.out.println("Creating proposal for get(" + key + ")");
         final TransactionProposalRequest queryProposalRequest = client.newTransactionProposalRequest();
 
         final ChaincodeID queryChaincodeID = ChaincodeID.newBuilder()
-                .setName("javacc")
+                .setName("kotlincc")
                 .setVersion("1.0")
                 .build();
 
         queryProposalRequest.setChaincodeID(queryChaincodeID);
-        queryProposalRequest.setFcn("get");
+        queryProposalRequest.setFcn("query");
         queryProposalRequest.setProposalWaitTime(TimeUnit.SECONDS.toMillis(10));
         queryProposalRequest.setArgs(new String[]{key});
 
         return queryProposalRequest;
 
     }
+
+
 }
