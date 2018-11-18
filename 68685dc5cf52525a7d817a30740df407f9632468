@@ -1,0 +1,7 @@
+Code-Review+2: Artem Barger <bartem@il.ibm.com>
+Verified+1: Hyperledger Jobbuilder <jobbuilder@jenkins.hyperledger.org>
+Submitted-by: Artem Barger <bartem@il.ibm.com>
+Submitted-at: Sun, 18 Nov 2018 09:33:03 +0000
+Reviewed-on: https://gerrit.hyperledger.org/r/27061
+Project: fabric-chaincode-java
+Branch: refs/heads/master
