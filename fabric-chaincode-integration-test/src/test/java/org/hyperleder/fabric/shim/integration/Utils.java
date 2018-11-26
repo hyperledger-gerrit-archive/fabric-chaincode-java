@@ -353,10 +353,15 @@ public class Utils {
         // Sending proposal
         System.out.println("Sending instantiate to peers: " + String.join(", ", peers.stream().map(p -> p.getName()).collect(Collectors.toList())));
         Collection<ProposalResponse> instantiationResponces = channel.sendInstantiationProposal(proposal, peers);
+
         if (instantiationResponces == null || instantiationResponces.isEmpty()) {
             System.out.println("We have a problem, no responses to instantiate request");
             fail("We have a problem, no responses to instantiate request");
         }
+        for (ProposalResponse resp : instantiationResponces) {
+            System.out.println("Response from peer " + resp.getPeer().getName() + " is: " + resp.getProposalResponse().getResponse().getStatus() + ": " + resp.getProposalResponse().getResponse().getMessage() + ": " + resp.getProposalResponse().getResponse().getPayload().toStringUtf8());
+        }
+
         for (ProposalResponse response : instantiationResponces) {
             if (response.getStatus() != ProposalResponse.Status.SUCCESS) {
                 System.out.println("We have a problem, chaicode not instantiated: " + response.getMessage());
@@ -402,6 +407,9 @@ public class Utils {
         System.out.println("Sending proposal for " + proposal.getFcn() + "(" + String.join(", ", proposal.getArgs()) + ") to peers: " + String.join(", ", peers.stream().map(p -> p.getName()).collect(Collectors.toList())));
         final Collection<ProposalResponse> responses = channel.sendTransactionProposal(proposal, peers);
 
+        for (ProposalResponse resp : responses) {
+            System.out.println("Response from peer " + resp.getPeer().getName() + " is: " + resp.getProposalResponse().getResponse().getStatus() + ": " + resp.getProposalResponse().getResponse().getMessage() + ": " + resp.getProposalResponse().getResponse().getPayload().toStringUtf8());
+        }
         try {
             Thread.sleep(1000);
         } catch (InterruptedException e) {
