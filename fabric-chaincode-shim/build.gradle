@@ -14,6 +14,7 @@ dependencies {
     compile 'io.netty:netty-tcnative-boringssl-static:2.0.7.Final'
     compile 'org.bouncycastle:bcpkix-jdk15on:1.59'
     compile 'org.bouncycastle:bcprov-jdk15on:1.59'
+    compile 'org.reflections:reflections:0.9.11'
 }
 
 sourceSets {
@@ -75,7 +76,8 @@ jacocoTestCoverageVerification {
             element = 'CLASS'
             excludes = ['org.hyperledger.fabric.shim.helper.Channel',
                         'org.hyperledger.fabric.shim.impl.Handler',
-                        'org.hyperledger.fabric.shim.impl.ChaincodeSupportStream.1']
+                        'org.hyperledger.fabric.shim.impl.ChaincodeSupportStream.1',
+                        'org.hyperledger.fabric.shim.ChaincodeRunner']
             limit {
                 minimum = 0.86
             }
