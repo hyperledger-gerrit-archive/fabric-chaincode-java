@@ -1,0 +1,29 @@
+v1.3.0 September 25, 2018
+-------------------------
+
+Release Notes
+-------------
+Parity with Go chaincode:
+1. State-based endorsement support
+2. Query result pagination support
+
+Increase test coverage, including integration tests based on
+testcontainers framework.
+
+baseimage version 0.4.14
+
+Known Vulnerabilities
+---------------------
+none
+
+Resolved Vulnerabilities
+------------------------
+none
+
+Known Issues & Workarounds
+--------------------------
+none
+
+Change Log
+----------
+https://github.com/hyperledger/fabric-chaincode-java/blob/master/CHANGELOG.md#v130-rc1
