@@ -10,7 +10,7 @@ import io.grpc.ManagedChannelBuilder;
 import io.grpc.netty.GrpcSslContexts;
 import io.grpc.netty.NegotiationType;
 import io.grpc.netty.NettyChannelBuilder;
-import io.netty.handler.ssl.SslContext;
+import io.netty.handler.ssl.*;
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.DefaultParser;
 import org.apache.commons.cli.Options;
@@ -250,13 +250,34 @@ public abstract class ChaincodeBase implements Chaincode {
     SslContext createSSLContext() throws IOException {
         byte ckb[] = Files.readAllBytes(Paths.get(this.tlsClientKeyPath));
         byte ccb[] = Files.readAllBytes(Paths.get(this.tlsClientCertPath));
+        if (OpenSsl.isAvailable()) {
+            return GrpcSslContexts.forClient()
+                    .trustManager(new File(this.tlsClientRootCertPath))
+                    .keyManager(
+                            new ByteArrayInputStream(Base64.getDecoder().decode(ccb)),
+                            new ByteArrayInputStream(Base64.getDecoder().decode(ckb)))
+                    .build();
+        }
 
-        return GrpcSslContexts.forClient()
-                .trustManager(new File(this.tlsClientRootCertPath))
+        SslProvider provider = OpenSsl.isAlpnSupported() ? SslProvider.OPENSSL : SslProvider.JDK;
+        SslContext sslCtx = SslContextBuilder.forClient().sslProvider(provider)
+                .trustManager(
+                new File(this.tlsClientRootCertPath))
                 .keyManager(
                         new ByteArrayInputStream(Base64.getDecoder().decode(ccb)),
                         new ByteArrayInputStream(Base64.getDecoder().decode(ckb)))
-                .build();
+                .applicationProtocolConfig(new ApplicationProtocolConfig(
+                        ApplicationProtocolConfig.Protocol.ALPN,
+                        // NO_ADVERTISE is currently the only mode supported by both OpenSsl and JDK providers.
+                        ApplicationProtocolConfig.SelectorFailureBehavior.NO_ADVERTISE,
+                        // ACCEPT is currently the only mode supported by both OpenSsl and JDK providers.
+                        ApplicationProtocolConfig.SelectedListenerFailureBehavior.ACCEPT,
+                        ApplicationProtocolNames.HTTP_2,
+                        ApplicationProtocolNames.HTTP_1_1))
+        .build();
+
+        return sslCtx;
+
     }
 
     protected static Response newSuccessResponse(String message, byte[] payload) {
