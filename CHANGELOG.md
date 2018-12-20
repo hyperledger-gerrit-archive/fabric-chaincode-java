@@ -1,3 +1,9 @@
+## v1.4.0-rc2
+Thu Dec 20 13:17:55 IST 2018
+
+* [622d75c](https://github.com/hyperledger/fabric-chaincode-java/commit/622d75c) [FAB-13248](https://jira.hyperledger.org/browse/FAB-13248) Update dependencies for sonatype
+* [7252dbb](https://github.com/hyperledger/fabric-chaincode-java/commit/7252dbb) [FAB-13229](https://jira.hyperledger.org/browse/FAB-13229) Prepare for next rel (1.4.0 on release-1.4)
+
 ## v1.3.0-rc1
 Tue Sep 25 15:25:05 EDT 2018
 
