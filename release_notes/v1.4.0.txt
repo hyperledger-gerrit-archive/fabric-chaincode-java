@@ -27,4 +27,4 @@ none
 
 Change Log
 ----------
-https://github.com/hyperledger/fabric-chaincode-java/blob/master/CHANGELOG.md#v140-rc2
+https://github.com/hyperledger/fabric-chaincode-java/blob/master/CHANGELOG.md#v1.4.0
