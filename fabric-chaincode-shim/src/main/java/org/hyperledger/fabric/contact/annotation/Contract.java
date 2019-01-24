@@ -21,4 +21,5 @@ import static java.lang.annotation.RetentionPolicy.RUNTIME;
 @Target(ElementType.TYPE)
 public @interface Contract {
     Info info();
+    String namespace() default "";
 }
