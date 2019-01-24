@@ -17,6 +17,7 @@ dependencies {
     compile 'io.swagger.core.v3:swagger-annotations:2.0.0'
     compile 'org.bouncycastle:bcpkix-jdk15on:1.60'
     compile 'org.bouncycastle:bcprov-jdk15on:1.60'
+    compile 'org.reflections:reflections:0.9.11'
 }
 
 sourceSets {
@@ -64,7 +65,8 @@ jacocoTestCoverageVerification {
             excludes = ['org.hyperledger.fabric.shim.helper.Channel',
                         'org.hyperledger.fabric.shim.impl.Handler',
                         'org.hyperledger.fabric.shim.impl.ChaincodeSupportStream.1',
-                        'org.hyperledger.fabric.contact.routing.*']
+                        'org.hyperledger.fabric.contact.execution.ExecutionService',
+                        'org.hyperledger.fabric.contact.*']
             limit {
                 minimum = 0.86
             }
