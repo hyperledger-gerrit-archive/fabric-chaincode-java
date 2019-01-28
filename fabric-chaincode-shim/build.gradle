@@ -17,6 +17,7 @@ dependencies {
     compile 'io.swagger.core.v3:swagger-annotations:2.0.0'
     compile 'org.bouncycastle:bcpkix-jdk15on:1.60'
     compile 'org.bouncycastle:bcprov-jdk15on:1.60'
+    compile 'org.reflections:reflections:0.9.11'
 }
 
 sourceSets {
