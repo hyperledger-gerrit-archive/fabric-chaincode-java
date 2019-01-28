@@ -248,8 +248,8 @@ public abstract class ChaincodeBase implements Chaincode {
     }
 
     SslContext createSSLContext() throws IOException {
-        byte ckb[] = Files.readAllBytes(Paths.get(this.tlsClientKeyPath));
-        byte ccb[] = Files.readAllBytes(Paths.get(this.tlsClientCertPath));
+        byte[] ckb = Files.readAllBytes(Paths.get(this.tlsClientKeyPath));
+        byte[] ccb = Files.readAllBytes(Paths.get(this.tlsClientCertPath));
 
         return GrpcSslContexts.forClient()
                 .trustManager(new File(this.tlsClientRootCertPath))
@@ -259,47 +259,49 @@ public abstract class ChaincodeBase implements Chaincode {
                 .build();
     }
 
+    @Deprecated
     protected static Response newSuccessResponse(String message, byte[] payload) {
-        return new Response(SUCCESS, message, payload);
+        return ResponseUtils.newSuccessResponse(message, payload);
     }
 
+    @Deprecated
     protected static Response newSuccessResponse() {
-        return newSuccessResponse(null, null);
+        return ResponseUtils.newSuccessResponse();
     }
 
+    @Deprecated
     protected static Response newSuccessResponse(String message) {
-        return newSuccessResponse(message, null);
+        return ResponseUtils.newSuccessResponse(message);
     }
 
+    @Deprecated
     protected static Response newSuccessResponse(byte[] payload) {
-        return newSuccessResponse(null, payload);
+        return ResponseUtils.newSuccessResponse(payload);
     }
 
+    @Deprecated
     protected static Response newErrorResponse(String message, byte[] payload) {
-        return new Response(INTERNAL_SERVER_ERROR, message, payload);
+        return ResponseUtils.newErrorResponse(message, payload);
     }
 
+    @Deprecated
     protected static Response newErrorResponse() {
-        return newErrorResponse(null, null);
+        return ResponseUtils.newErrorResponse();
     }
 
+    @Deprecated
     protected static Response newErrorResponse(String message) {
-        return newErrorResponse(message, null);
+        return ResponseUtils.newErrorResponse(message);
     }
 
+    @Deprecated
     protected static Response newErrorResponse(byte[] payload) {
-        return newErrorResponse(null, payload);
+        return ResponseUtils.newErrorResponse(payload);
     }
 
+    @Deprecated
     protected static Response newErrorResponse(Throwable throwable) {
-        return newErrorResponse(throwable.getMessage(), printStackTrace(throwable));
-    }
-
-    private static byte[] printStackTrace(Throwable throwable) {
-        if (throwable == null) return null;
-        final StringWriter buffer = new StringWriter();
-        throwable.printStackTrace(new PrintWriter(buffer));
-        return buffer.toString().getBytes(StandardCharsets.UTF_8);
+        return ResponseUtils.newErrorResponse(throwable);
     }
 
     String getHost() {
