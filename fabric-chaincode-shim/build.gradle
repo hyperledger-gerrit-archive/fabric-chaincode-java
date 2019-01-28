@@ -17,6 +17,8 @@ dependencies {
     compile 'io.swagger.core.v3:swagger-annotations:2.0.0'
     compile 'org.bouncycastle:bcpkix-jdk15on:1.60'
     compile 'org.bouncycastle:bcprov-jdk15on:1.60'
+    compile 'org.reflections:reflections:0.9.11'
+    compile group: 'cglib', name: 'cglib', version: '3.2.10'
 }
 
 sourceSets {
@@ -65,7 +67,9 @@ jacocoTestCoverageVerification {
                         'org.hyperledger.fabric.shim.impl.Handler',
                         'org.hyperledger.fabric.shim.impl.ChaincodeSupportStream.1',
                         'org.hyperledger.fabric.contract.ContractRouter',
-                        'org.hyperledger.fabric.contract.routing.TransactionType']
+                        'org.hyperledger.fabric.contract.routing.TransactionType',
+                        'org.hyperledger.fabric.contract.execution.impl.*',
+                        'org.hyperledger.fabric.contract.routing.impl.*']
             limit {
                 minimum = 0.86
             }
