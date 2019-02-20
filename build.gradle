@@ -35,3 +35,9 @@ subprojects {
         testCompile 'com.github.stefanbirkner:system-rules:1.17.0'
     }
 }
+
+if (System.getProperty('os.arch').startsWith('ppc')) {
+    tasks.getByPath('fabric-chaincode-protos:generateProto').enabled = false
+    tasks.getByPath('fabric-chaincode-protos:generateProto').enabled = false
+    println System.getProperty('os.arch')
+}
