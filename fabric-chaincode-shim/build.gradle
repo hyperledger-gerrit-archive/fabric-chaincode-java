@@ -13,10 +13,20 @@ plugins {
 
 dependencies {
     compile project(':fabric-chaincode-protos')
-    compile 'io.netty:netty-tcnative-boringssl-static:2.0.7.Final'
+    compile 'io.netty:netty-tcnative-boringssl-static:2.0.15.Final'
     compile 'io.swagger.core.v3:swagger-annotations:2.0.0'
     compile 'org.bouncycastle:bcpkix-jdk15on:1.60'
     compile 'org.bouncycastle:bcprov-jdk15on:1.60'
+}
+
+if (System.getProperty('os.arch').startsWith('s390')) {
+    dependencies {
+        compile 'io.netty:netty-tcnative-openssl-static:2.0.15.Final'
+    }
+} else {
+    dependencies {
+        compile 'io.netty:netty-tcnative-boringssl-static:2.0.15.Final'
+    }
 }
 
 sourceSets {
