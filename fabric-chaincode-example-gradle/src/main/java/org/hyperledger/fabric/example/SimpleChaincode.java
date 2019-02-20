@@ -129,6 +129,9 @@ public class SimpleChaincode extends ChaincodeBase {
     }
 
     public static void main(String[] args) {
+        if (!io.netty.handler.ssl.OpenSsl.isAvailable()) {
+            io.netty.handler.ssl.OpenSsl.unavailabilityCause().printStackTrace();
+        }
         new SimpleChaincode().start(args);
     }
 
