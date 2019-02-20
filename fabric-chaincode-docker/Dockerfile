@@ -15,8 +15,16 @@ RUN apt-get install wget -y
 COPY --from=builder /root/.sdkman/candidates/gradle/current /usr/bin/gradle
 COPY --from=builder /root/.sdkman/candidates/maven/current /usr/bin/maven
 
+ADD build_netty.sh /root/
+ADD ppc.patch /root/
+RUN chmod +x /root/build_netty.sh
+
 SHELL ["/bin/bash", "-c"]
 ENV PATH="/usr/bin/maven/bin:/usr/bin/maven/:/usr/bin/gradle:/usr/bin/gradle/bin:${PATH}"
+
+# Building netty-tcnative for non x86 platforms
+WORKDIR /root
+RUN ./build_netty.sh
 
 # Coping libs, scripts and sources
 ADD build/distributions/ /root/
@@ -64,7 +72,8 @@ RUN mvn install::install-file -Dfile=fabric-chaincode-protos-1.3.0.jar -DpomFile
 RUN mvn install::install-file -Dfile=fabric-chaincode-shim-1.3.0.jar -DpomFile=fabric-chaincode-shim-1.3.0.pom
 
 #Removing non-needed sources
-WORKDIR /root/chaincode-javaRUN rm -rf example-src
+WORKDIR /root/chaincode-java
+RUN rm -rf example-src
 RUN rm -rf shim-src
 
 # Creating final javaenv image which will include all required
