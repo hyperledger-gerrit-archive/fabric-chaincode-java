@@ -22,7 +22,7 @@ import static io.grpc.stub.ServerCalls.asyncUnimplementedUnaryCall;
  * </pre>
  */
 @javax.annotation.Generated(
-    value = "by gRPC proto compiler (version 1.9.0)",
+    value = "by gRPC proto compiler (version 1.15.0)",
     comments = "Source: peer/chaincode_shim.proto")
 public final class ChaincodeSupportGrpc {
 
@@ -31,15 +31,14 @@ public final class ChaincodeSupportGrpc {
   public static final String SERVICE_NAME = "protos.ChaincodeSupport";
 
   // Static method descriptors that strictly reflect the proto.
-  @io.grpc.ExperimentalApi("https://github.com/grpc/grpc-java/issues/1901")
-  @java.lang.Deprecated // Use {@link #getRegisterMethod()} instead. 
-  public static final io.grpc.MethodDescriptor<org.hyperledger.fabric.protos.peer.ChaincodeShim.ChaincodeMessage,
-      org.hyperledger.fabric.protos.peer.ChaincodeShim.ChaincodeMessage> METHOD_REGISTER = getRegisterMethod();
-
   private static volatile io.grpc.MethodDescriptor<org.hyperledger.fabric.protos.peer.ChaincodeShim.ChaincodeMessage,
       org.hyperledger.fabric.protos.peer.ChaincodeShim.ChaincodeMessage> getRegisterMethod;
 
-  @io.grpc.ExperimentalApi("https://github.com/grpc/grpc-java/issues/1901")
+  @io.grpc.stub.annotations.RpcMethod(
+      fullMethodName = SERVICE_NAME + '/' + "Register",
+      requestType = org.hyperledger.fabric.protos.peer.ChaincodeShim.ChaincodeMessage.class,
+      responseType = org.hyperledger.fabric.protos.peer.ChaincodeShim.ChaincodeMessage.class,
+      methodType = io.grpc.MethodDescriptor.MethodType.BIDI_STREAMING)
   public static io.grpc.MethodDescriptor<org.hyperledger.fabric.protos.peer.ChaincodeShim.ChaincodeMessage,
       org.hyperledger.fabric.protos.peer.ChaincodeShim.ChaincodeMessage> getRegisterMethod() {
     io.grpc.MethodDescriptor<org.hyperledger.fabric.protos.peer.ChaincodeShim.ChaincodeMessage, org.hyperledger.fabric.protos.peer.ChaincodeShim.ChaincodeMessage> getRegisterMethod;
