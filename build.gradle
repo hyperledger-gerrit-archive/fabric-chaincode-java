@@ -41,3 +41,9 @@ subprojects {
             options.compilerArgs << "-Xlint:unchecked" << "-Xlint:deprecation"
         }
     }
+}
+
+if (System.getProperty('os.arch').startsWith('ppc') || System.getProperty('os.arch').startsWith('s390')) {
+    tasks.getByPath('fabric-chaincode-protos:generateProto').enabled = false
+    println System.getProperty('os.arch')
+}
