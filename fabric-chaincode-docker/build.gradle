@@ -18,32 +18,7 @@ apply plugin: 'com.bmuschko.docker-remote-api'
 
 import com.bmuschko.gradle.docker.tasks.image.*
 
-task copyLib (type: Copy) {
-    dependsOn ':fabric-chaincode-shim:build'
-    from project(':fabric-chaincode-shim').configurations.runtime
-    into('build/distributions/chaincode-java/lib')
-}
-
-task copyShimJar(type: Copy) {
-    dependsOn copyLib
-    from project(':fabric-chaincode-shim').jar
-    into('build/distributions/chaincode-java/lib')
-}
-
-task copyStartScript(type: Copy) {
-    dependsOn copyShimJar
-    from ('start')
-    into ('build/distributions/chaincode-java')
-}
-
-task copyBuildScript(type: Copy) {
-    dependsOn copyStartScript
-    from ('build.sh')
-    into ('build/distributions/chaincode-java')
-}
-
-task copyAllDeps(type: Copy) {
-    dependsOn copyBuildScript
+task copyAllSrc(type: Copy) {
     copy {
         from project(':fabric-chaincode-shim').getProjectDir()
         into('build/distributions/chaincode-java/shim-src/fabric-chaincode-shim/')
@@ -73,11 +48,35 @@ task copyAllDeps(type: Copy) {
         from project.getParent().file("fabric-chaincode-example-maven")
         into('build/distributions/chaincode-java/example-src/fabric-chaincode-example-maven')
     }
+
+    copy {
+        from ('start')
+        into ('build/distributions/chaincode-java')
+    }
+
+    copy {
+        from ('build.sh')
+        into ('build/distributions/chaincode-java')
+    }
 }
 
+task copyLib (type: Copy) {
+    dependsOn copyAllSrc
+    from project(':fabric-chaincode-shim').configurations.runtime
+    into('build/distributions/chaincode-java/lib')
+}
+
+task copyShimJar(type: Copy) {
+    dependsOn copyLib
+    from project(':fabric-chaincode-shim').jar
+    into('build/distributions/chaincode-java/lib')
+}
+
+
 task buildImage(type: DockerBuildImage) {
-    dependsOn copyAllDeps
+    dependsOn copyShimJar
     inputDir = project.file('Dockerfile').parentFile
     tags = ['hyperledger/fabric-javaenv', 'hyperledger/fabric-javaenv:amd64-2.0.0', 'hyperledger/fabric-javaenv:amd64-latest']
 }
 
+build.dependsOn ':fabric-chaincode-shim:build'
