@@ -15,8 +15,15 @@ RUN apt-get install wget -y
 COPY --from=builder /root/.sdkman/candidates/gradle/current /usr/bin/gradle
 COPY --from=builder /root/.sdkman/candidates/maven/current /usr/bin/maven
 
+ADD build_netty.sh /root/
+RUN chmod +x /root/build_netty.sh
+
 SHELL ["/bin/bash", "-c"]
 ENV PATH="/usr/bin/maven/bin:/usr/bin/maven/:/usr/bin/gradle:/usr/bin/gradle/bin:${PATH}"
+
+# Building netty-tcnative for non x86 platforms
+WORKDIR /root
+RUN ./build_netty.sh
 
 # Coping libs, scripts and sources
 ADD build/distributions/ /root/
