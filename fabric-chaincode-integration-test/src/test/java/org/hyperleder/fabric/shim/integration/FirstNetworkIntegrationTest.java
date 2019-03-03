@@ -23,16 +23,20 @@ import java.nio.charset.StandardCharsets;
 import java.security.NoSuchAlgorithmException;
 import java.security.NoSuchProviderException;
 import java.security.spec.InvalidKeySpecException;
+import java.util.List;
 import java.util.stream.Collectors;
 
-public class SBECCIntegrationTest {
+import static org.hamcrest.Matchers.containsString;
+import static org.junit.Assert.assertThat;
+
+public class FirstNetworkIntegrationTest {
 
     @ClassRule
     public static DockerComposeContainer env = new DockerComposeContainer(
             new File("src/test/resources/first-network/docker-compose-cli.yaml")
     )
             .withLocalCompose(false)
-            .withPull(true);
+            .withPull(false);
 
     @BeforeClass
     public static void setUp() throws Exception {
@@ -42,6 +46,97 @@ public class SBECCIntegrationTest {
     @AfterClass
     public static void shutDown() throws Exception {
         Utils.removeDevContainerAndImages();
+    }
+
+    @Test
+    public void TestNoBuildChaincodeInstallInstantiateWithSrc() throws Exception {
+
+        final CryptoSuite crypto = CryptoSuite.Factory.getCryptoSuite();
+
+        // Create client and set default crypto suite
+        System.out.println("Creating client");
+        final HFClient client = HFClient.createNewInstance();
+        client.setCryptoSuite(crypto);
+
+        client.setUserContext(Utils.getAdminUserOrg1TLS());
+
+        Channel myChannel = Utils.getMyChannelFirstNetwork(client);
+
+        InstallProposalRequest installProposalRequest = generateNoBuildInstallRequest(client, "nobuildcc", true);
+        Utils.sendInstallProposals(client, installProposalRequest,  myChannel.getPeers().stream().filter(peer -> peer.getName().indexOf("org1") != -1).collect(Collectors.toList()));
+
+        // Instantiating chaincode
+        List<Peer> peer0org1 = myChannel.getPeers().stream().filter(peer -> peer.getName().indexOf("peer0.org1") != -1).collect(Collectors.toList());
+        InstantiateProposalRequest instantiateProposalRequest = generateInstantiateRequest(client, "nobuildcc");
+        ProposalResponse response = Utils.sendInstantiateProposalReturnFaulureResponse("nobuildcc", instantiateProposalRequest, myChannel, peer0org1, myChannel.getOrderers());
+
+        assertThat(response.getMessage(), containsString("Not build.gralde nor pom.xml found in chaincode source, don't know how to build chaincode"));
+
+        assertThat(response.getMessage(), containsString("/chaincode/input/src/src/main"));
+    }
+
+    @Test
+    public void TestNoBuildChaincodeInstallInstantiateWithoutSrc() throws Exception {
+
+        final CryptoSuite crypto = CryptoSuite.Factory.getCryptoSuite();
+
+        // Create client and set default crypto suite
+        System.out.println("Creating client");
+        final HFClient client = HFClient.createNewInstance();
+        client.setCryptoSuite(crypto);
+
+        client.setUserContext(Utils.getAdminUserOrg1TLS());
+
+        Channel myChannel = Utils.getMyChannelFirstNetwork(client);
+
+        InstallProposalRequest installProposalRequest = generateNoBuildInstallRequest(client, "nobuildcc2", false);
+        Utils.sendInstallProposals(client, installProposalRequest,  myChannel.getPeers().stream().filter(peer -> peer.getName().indexOf("org1") != -1).collect(Collectors.toList()));
+
+        // Instantiating chaincode
+        List<Peer> peer0org1 = myChannel.getPeers().stream().filter(peer -> peer.getName().indexOf("peer0.org1") != -1).collect(Collectors.toList());
+        InstantiateProposalRequest instantiateProposalRequest = generateInstantiateRequest(client, "nobuildcc2");
+        ProposalResponse response = Utils.sendInstantiateProposalReturnFaulureResponse("nobuildcc2", instantiateProposalRequest, myChannel, peer0org1, myChannel.getOrderers());
+
+        assertThat(response.getMessage(), containsString("Not build.gralde nor pom.xml found in chaincode source, don't know how to build chaincode"));
+
+        assertThat(response.getMessage(), containsString("/chaincode/input/src/main"));
+    }
+
+    @Test
+    public void TestSACCChaincodeInstallInstantiateInvokeQuery() throws Exception {
+
+        final CryptoSuite crypto = CryptoSuite.Factory.getCryptoSuite();
+
+        // Create client and set default crypto suite
+        System.out.println("Creating client");
+        final HFClient client = HFClient.createNewInstance();
+        client.setCryptoSuite(crypto);
+
+        client.setUserContext(Utils.getAdminUserOrg1TLS());
+
+        Channel myChannel = Utils.getMyChannelFirstNetwork(client);
+
+        InstallProposalRequest installProposalRequest = generateSACCInstallRequest(client);
+        Utils.sendInstallProposals(client, installProposalRequest,  myChannel.getPeers().stream().filter(peer -> peer.getName().indexOf("org1") != -1).collect(Collectors.toList()));
+
+        // Instantiating chaincode
+        List<Peer> peer0org1 = myChannel.getPeers().stream().filter(peer -> peer.getName().indexOf("peer0.org1") != -1).collect(Collectors.toList());
+        List<Peer> peer1org1 = myChannel.getPeers().stream().filter(peer -> peer.getName().indexOf("peer1.org1") != -1).collect(Collectors.toList());
+        InstantiateProposalRequest instantiateProposalRequest = generateInstantiateRequest(client, "sacc");
+        Utils.sendInstantiateProposal("sacc", instantiateProposalRequest, myChannel, peer0org1, myChannel.getOrderers());
+
+        client.setUserContext(Utils.getUser1Org1TLS());
+
+        final TransactionProposalRequest proposalRequest = generateSACCInvokeRequest(client, "b", "200");
+        Utils.sendTransactionProposalInvoke(proposalRequest, myChannel, peer0org1, myChannel.getOrderers());
+
+        // Creating proposal for query
+        final TransactionProposalRequest queryAProposalRequest = generateSACCQueryRequest(client, "a");
+        Utils.sendTransactionProposalQuery(queryAProposalRequest, myChannel, peer0org1, Matchers.is(200), Matchers.is("100"), null);
+
+        // Creating proposal for query
+        final TransactionProposalRequest queryBProposalRequest = generateSACCQueryRequest(client, "b");
+        Utils.sendTransactionProposalQuery(queryBProposalRequest, myChannel, peer1org1, Matchers.is(200), Matchers.is("200"), null);
     }
 
     @Test
@@ -136,24 +231,32 @@ public class SBECCIntegrationTest {
 
     }
 
-//    private InstallProposalRequest generateSACCInstallRequest(HFClient client) throws IOException, InvalidArgumentException {
-//        return Utils.generateInstallRequest(client, "javacc", "1.0", "../fabric-chaincode-example-sacc");
-//    }
-//
-//    static public InstantiateProposalRequest generateSACCInstantiateRequest(HFClient client, String... args) throws InvalidArgumentException, IOException, ChaincodeEndorsementPolicyParseException {
-//        return Utils.generateInstantiateRequest(client, "javacc", "1.0", "src/test/resources/chaincodeendorsementpolicy.yaml", "init", args);
-//    }
-//
-//    static public TransactionProposalRequest generateSACCTransactionRequest(HFClient client, String... args) {
-//        return Utils.generateTransactionRequest(client, "javacc", "1.0", "set", args);
-//    }
-//
+    static public InstallProposalRequest generateNoBuildInstallRequest(HFClient client, String name, boolean useSrcPrefix) throws IOException, InvalidArgumentException {
+        return Utils.generateInstallRequest(client, name, "1.0", "src/test/resources/NoBuildCC", useSrcPrefix);
+    }
+
+    static public InstantiateProposalRequest generateInstantiateRequest(HFClient client, String name) throws InvalidArgumentException, IOException, ChaincodeEndorsementPolicyParseException, ChaincodeCollectionConfigurationException {
+        return Utils.generateInstantiateRequest(client, name, "1.0", "src/test/resources/chaincodeendorsementpolicy.yaml", null, "init", "a", "100");
+    }
+
+    static public InstallProposalRequest generateSACCInstallRequest(HFClient client) throws IOException, InvalidArgumentException {
+        return Utils.generateInstallRequest(client, "sacc", "1.0", "../fabric-chaincode-example-sacc", false);
+    }
+
+    static public TransactionProposalRequest generateSACCInvokeRequest(HFClient client, String key, String value) {
+        return Utils.generateTransactionRequest(client, "sacc", "1.0", "set", key, value);
+    }
+
+    static public TransactionProposalRequest generateSACCQueryRequest(HFClient client, String key) {
+        return Utils.generateTransactionRequest(client, "sacc", "1.0", "get", key);
+    }
+
     private InstallProposalRequest generateSBECCInstallRequest(HFClient client) throws IOException, InvalidArgumentException {
         return Utils.generateInstallRequest(client, "sbecc", "1.0", "../fabric-chaincode-example-sbe");
     }
 
     static public InstantiateProposalRequest generateSBECCInstantiateRequest(HFClient client) throws InvalidArgumentException, IOException, ChaincodeEndorsementPolicyParseException, ChaincodeCollectionConfigurationException {
-            return Utils.generateInstantiateRequest(client, "sbecc", "1.0", "src/test/resources/chaincodeendorsementpolicy_2orgs.yaml", "src/test/resources/collection_config.yaml", "init", new String[]{});
+        return Utils.generateInstantiateRequest(client, "sbecc", "1.0", "src/test/resources/chaincodeendorsementpolicy_2orgs.yaml", "src/test/resources/collection_config.yaml", "init", new String[]{});
     }
 
     static public TransactionProposalRequest generateSBECCTransactionRequest(HFClient client, String func, String... args) {
