@@ -16,8 +16,9 @@ public class SimpleChaincode extends ChaincodeBase {
 
     @Override
     public Response init(ChaincodeStub stub) {
+
         try {
-            _logger.info("Init java simple chaincode");
+            _logger.info("Init java simple chaincode:");
             String func = stub.getFunction();
             if (!func.equals("init")) {
                 return newErrorResponse("function other than init is not supported");
