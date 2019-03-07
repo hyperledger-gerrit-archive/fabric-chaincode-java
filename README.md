@@ -1,6 +1,6 @@
 # Hyperledger Fabric Shim for Java chaincode
 
-This is a Java based implementation of Hyprledger Fabric chaincode shim APIs, which enables development of chaincodes using Java language.
+This is a Java 8 based implementation of Hyprledger Fabric chaincode shim APIs, which enables development of chaincodes using Java language.
 
 Application developers interested in developing smart contracts (what we call chaincode) for Hyperledger Fabric should
 read the tutorial in TUTORIAL.md file and visit
