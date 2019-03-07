@@ -63,7 +63,7 @@ public class FirstNetworkIntegrationTest {
         Channel myChannel = Utils.getMyChannelFirstNetwork(client);
 
         InstallProposalRequest installProposalRequest = generateNoBuildInstallRequest(client, "nobuildcc", true);
-        Utils.sendInstallProposals(client, installProposalRequest,  myChannel.getPeers().stream().filter(peer -> peer.getName().indexOf("org1") != -1).collect(Collectors.toList()));
+        Utils.sendInstallProposals(client, installProposalRequest, myChannel.getPeers().stream().filter(peer -> peer.getName().indexOf("org1") != -1).collect(Collectors.toList()));
 
         // Instantiating chaincode
         List<Peer> peer0org1 = myChannel.getPeers().stream().filter(peer -> peer.getName().indexOf("peer0.org1") != -1).collect(Collectors.toList());
@@ -90,7 +90,7 @@ public class FirstNetworkIntegrationTest {
         Channel myChannel = Utils.getMyChannelFirstNetwork(client);
 
         InstallProposalRequest installProposalRequest = generateNoBuildInstallRequest(client, "nobuildcc2", false);
-        Utils.sendInstallProposals(client, installProposalRequest,  myChannel.getPeers().stream().filter(peer -> peer.getName().indexOf("org1") != -1).collect(Collectors.toList()));
+        Utils.sendInstallProposals(client, installProposalRequest, myChannel.getPeers().stream().filter(peer -> peer.getName().indexOf("org1") != -1).collect(Collectors.toList()));
 
         // Instantiating chaincode
         List<Peer> peer0org1 = myChannel.getPeers().stream().filter(peer -> peer.getName().indexOf("peer0.org1") != -1).collect(Collectors.toList());
@@ -101,6 +101,32 @@ public class FirstNetworkIntegrationTest {
 
         assertThat(response.getMessage(), containsString("/chaincode/input/src/main"));
     }
+
+    @Test
+    public void TestNoMainChaincodeInstallInstantiate() throws Exception {
+
+        final CryptoSuite crypto = CryptoSuite.Factory.getCryptoSuite();
+
+        // Create client and set default crypto suite
+        System.out.println("Creating client");
+        final HFClient client = HFClient.createNewInstance();
+        client.setCryptoSuite(crypto);
+
+        client.setUserContext(Utils.getAdminUserOrg1TLS());
+
+        Channel myChannel = Utils.getMyChannelFirstNetwork(client);
+
+        InstallProposalRequest installProposalRequest = generateNoMainInstallRequest(client, "nomaincc", true);
+        Utils.sendInstallProposals(client, installProposalRequest, myChannel.getPeers().stream().filter(peer -> peer.getName().indexOf("org1") != -1).collect(Collectors.toList()));
+
+        // Instantiating chaincode
+        List<Peer> peer0org1 = myChannel.getPeers().stream().filter(peer -> peer.getName().indexOf("peer0.org1") != -1).collect(Collectors.toList());
+        InstantiateProposalRequest instantiateProposalRequest = generateInstantiateRequest(client, "nomaincc");
+        ProposalResponse response = Utils.sendInstantiateProposalReturnFaulureResponse("nomaincc", instantiateProposalRequest, myChannel, peer0org1, myChannel.getOrderers());
+
+        assertThat(response.getMessage(), containsString("chaincode registration failed: container exited with 1"));
+    }
+
 
     @Test
     public void TestSACCChaincodeInstallInstantiateInvokeQuery() throws Exception {
@@ -117,7 +143,7 @@ public class FirstNetworkIntegrationTest {
         Channel myChannel = Utils.getMyChannelFirstNetwork(client);
 
         InstallProposalRequest installProposalRequest = generateSACCInstallRequest(client);
-        Utils.sendInstallProposals(client, installProposalRequest,  myChannel.getPeers().stream().filter(peer -> peer.getName().indexOf("org1") != -1).collect(Collectors.toList()));
+        Utils.sendInstallProposals(client, installProposalRequest, myChannel.getPeers().stream().filter(peer -> peer.getName().indexOf("org1") != -1).collect(Collectors.toList()));
 
         // Instantiating chaincode
         List<Peer> peer0org1 = myChannel.getPeers().stream().filter(peer -> peer.getName().indexOf("peer0.org1") != -1).collect(Collectors.toList());
@@ -154,11 +180,11 @@ public class FirstNetworkIntegrationTest {
 
         System.out.println("Installing chaincode fabric-chaincode-example-sacc, packaged as gzip stream");
         InstallProposalRequest installProposalRequest = generateSBECCInstallRequest(client);
-        Utils.sendInstallProposals(client, installProposalRequest,  myChannel.getPeers().stream().filter(peer -> peer.getName().indexOf("org1") != -1).collect(Collectors.toList()));
+        Utils.sendInstallProposals(client, installProposalRequest, myChannel.getPeers().stream().filter(peer -> peer.getName().indexOf("org1") != -1).collect(Collectors.toList()));
 
         client.setUserContext(Utils.getAdminUserOrg2TLS());
         installProposalRequest = generateSBECCInstallRequest(client);
-        Utils.sendInstallProposals(client, installProposalRequest,  myChannel.getPeers().stream().filter(peer -> peer.getName().indexOf("org2") != -1).collect(Collectors.toList()));
+        Utils.sendInstallProposals(client, installProposalRequest, myChannel.getPeers().stream().filter(peer -> peer.getName().indexOf("org2") != -1).collect(Collectors.toList()));
 
         InstantiateProposalRequest instantiateProposal = generateSBECCInstantiateRequest(client);
         Utils.sendInstantiateProposal("sbecc", instantiateProposal, myChannel, myChannel.getPeers().stream().filter(peer -> peer.getName().indexOf("peer0.org2") != -1).collect(Collectors.toList()), myChannel.getOrderers());
@@ -168,7 +194,7 @@ public class FirstNetworkIntegrationTest {
 
     }
 
-    void RunSBE(HFClient client, Channel channel,  String mode) throws NoSuchAlgorithmException, InvalidKeySpecException, NoSuchProviderException, IOException, ProposalException, InvalidArgumentException {
+    void RunSBE(HFClient client, Channel channel, String mode) throws NoSuchAlgorithmException, InvalidKeySpecException, NoSuchProviderException, IOException, ProposalException, InvalidArgumentException {
         client.setUserContext(Utils.getUser1Org1TLS());
         TransactionProposalRequest proposal = generateSBECCTransactionRequest(client, "setval", mode, "foo");
         Utils.sendTransactionProposalInvoke(proposal, channel, channel.getPeers().stream().filter(peer -> peer.getName().indexOf("peer0.org1") != -1).collect(Collectors.toList()), channel.getOrderers());
@@ -200,7 +226,7 @@ public class FirstNetworkIntegrationTest {
         Utils.sendTransactionProposalInvoke(proposal, channel, channel.getPeers().stream().filter(peer -> peer.getName().indexOf("peer0.org1") != -1).collect(Collectors.toList()), channel.getOrderers());
 
         proposal = generateSBECCTransactionRequest(client, "listorgs", mode);
-        Utils.sendTransactionProposalQuery(proposal, channel, channel.getPeers().stream().filter(peer -> peer.getName().indexOf("peer0.org1") != -1).collect(Collectors.toList()), Matchers.is(200), Matchers.anything(), Matchers.anyOf(Matchers.is(ByteString.copyFrom("[\"Org1MSP\",\"Org2MSP\"]", StandardCharsets.UTF_8)),Matchers.is(ByteString.copyFrom("[\"Org2MSP\",\"Org1MSP\"]", StandardCharsets.UTF_8))));
+        Utils.sendTransactionProposalQuery(proposal, channel, channel.getPeers().stream().filter(peer -> peer.getName().indexOf("peer0.org1") != -1).collect(Collectors.toList()), Matchers.is(200), Matchers.anything(), Matchers.anyOf(Matchers.is(ByteString.copyFrom("[\"Org1MSP\",\"Org2MSP\"]", StandardCharsets.UTF_8)), Matchers.is(ByteString.copyFrom("[\"Org2MSP\",\"Org1MSP\"]", StandardCharsets.UTF_8))));
 
         client.setUserContext(Utils.getUser1Org2TLS());
         proposal = generateSBECCTransactionRequest(client, "setval", mode, "val3");
@@ -221,7 +247,7 @@ public class FirstNetworkIntegrationTest {
         Utils.sendTransactionProposalInvoke(proposal, channel, channel.getPeers().stream().filter(peer -> peer.getName().indexOf("peer0.org2") != -1).collect(Collectors.toList()), channel.getOrderers(), true);
 
         proposal = generateSBECCTransactionRequest(client, "listorgs", mode);
-        Utils.sendTransactionProposalQuery(proposal, channel, channel.getPeers().stream().filter(peer -> peer.getName().indexOf("peer0.org2") != -1).collect(Collectors.toList()), Matchers.is(200), Matchers.anything(), Matchers.anyOf(Matchers.is(ByteString.copyFrom("[\"Org1MSP\",\"Org2MSP\"]", StandardCharsets.UTF_8)),Matchers.is(ByteString.copyFrom("[\"Org2MSP\",\"Org1MSP\"]", StandardCharsets.UTF_8))));
+        Utils.sendTransactionProposalQuery(proposal, channel, channel.getPeers().stream().filter(peer -> peer.getName().indexOf("peer0.org2") != -1).collect(Collectors.toList()), Matchers.is(200), Matchers.anything(), Matchers.anyOf(Matchers.is(ByteString.copyFrom("[\"Org1MSP\",\"Org2MSP\"]", StandardCharsets.UTF_8)), Matchers.is(ByteString.copyFrom("[\"Org2MSP\",\"Org1MSP\"]", StandardCharsets.UTF_8))));
 
         proposal = generateSBECCTransactionRequest(client, "delorgs", mode, "Org1MSP");
         Utils.sendTransactionProposalInvoke(proposal, channel, channel.getPeers().stream().filter(peer -> peer.getName().indexOf("peer0") != -1).collect(Collectors.toList()), channel.getOrderers());
@@ -233,6 +259,10 @@ public class FirstNetworkIntegrationTest {
 
     static public InstallProposalRequest generateNoBuildInstallRequest(HFClient client, String name, boolean useSrcPrefix) throws IOException, InvalidArgumentException {
         return Utils.generateInstallRequest(client, name, "1.0", "src/test/resources/NoBuildCC", useSrcPrefix);
+    }
+
+    static public InstallProposalRequest generateNoMainInstallRequest(HFClient client, String name, boolean useSrcPrefix) throws IOException, InvalidArgumentException {
+        return Utils.generateInstallRequest(client, name, "1.0", "src/test/resources/NoMainCC", useSrcPrefix);
     }
 
     static public InstantiateProposalRequest generateInstantiateRequest(HFClient client, String name) throws InvalidArgumentException, IOException, ChaincodeEndorsementPolicyParseException, ChaincodeCollectionConfigurationException {
