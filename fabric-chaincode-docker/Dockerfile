@@ -1,4 +1,4 @@
-FROM openjdk:8-slim as builder
+FROM openjdk:10-slim as builder
 RUN apt-get update -y && apt-get upgrade -y && apt-get install curl -y && apt-get install zip -y
 
 RUN curl -s "https://get.sdkman.io" | bash
@@ -8,7 +8,7 @@ SHELL ["/bin/bash", "-c"]
 RUN source /root/.sdkman/bin/sdkman-init.sh; sdk install gradle 4.6
 RUN source /root/.sdkman/bin/sdkman-init.sh; sdk install maven 3.5.0
 
-FROM openjdk:8-slim as dependencies
+FROM openjdk:10-slim as dependencies
 RUN apt-get update -y && apt-get upgrade -y
 RUN apt-get install wget -y
 
@@ -70,7 +70,7 @@ RUN rm -rf shim-src
 
 # Creating final javaenv image which will include all required
 # dependencies to build and compile java chaincode
-FROM openjdk:8-slim
+FROM openjdk:10-slim
 RUN apt-get update -y && apt-get upgrade -y
 COPY --from=builder /root/.sdkman/candidates/gradle/current /usr/bin/gradle
 COPY --from=builder /root/.sdkman/candidates/maven/current /usr/bin/maven
