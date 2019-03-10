@@ -52,7 +52,7 @@ public class EndorsementCC extends ChaincodeBase {
     public Response invoke(ChaincodeStub stub) {
         try {
             _logger.info("Invoking java EndorsementCC");
-            String funcName = stub.getFunction();
+            var funcName = stub.getFunction();
 
             if (functions.containsKey(funcName)) {
                 return (Response) functions.get(funcName).invoke(this, stub);

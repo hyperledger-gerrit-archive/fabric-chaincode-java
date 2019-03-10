@@ -6,10 +6,7 @@
     <version>1.0-SNAPSHOT</version>
 
     <properties>
-        <!-- Generic properties -->
-        <java.version>1.10</java.version>
-        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
+        <java.version>{{JAVA-VERSION}}</java.version>
     </properties>
 
     <dependencies>
