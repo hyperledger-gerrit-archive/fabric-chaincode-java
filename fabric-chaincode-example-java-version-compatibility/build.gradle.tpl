@@ -6,7 +6,7 @@ plugins {
 group 'org.hyperledger.fabric-chaincode-java'
 version '1.0-SNAPSHOT'
 
-sourceCompatibility = 1.10
+sourceCompatibility = {{JAVA-VERSION}}
 
 repositories {
     mavenLocal()
@@ -24,6 +24,6 @@ shadowJar {
     classifier = null
 
     manifest {
-        attributes 'Main-Class': 'org.hyperledger.fabric.example.EndorsementCC'
+        attributes 'Main-Class': 'org.hyperledger.fabric.example.SimpleChaincode'
     }
 }
