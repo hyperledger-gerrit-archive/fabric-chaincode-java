@@ -1,0 +1,7 @@
+Verified+1: Hyperledger Jobbuilder <jobbuilder@jenkins.hyperledger.org>
+Code-Review+2: David Enyeart <enyeart@us.ibm.com>
+Submitted-by: David Enyeart <enyeart@us.ibm.com>
+Submitted-at: Mon, 25 Mar 2019 11:14:35 +0000
+Reviewed-on: https://gerrit.hyperledger.org/r/30338
+Project: fabric-chaincode-java
+Branch: refs/heads/release-1.4
