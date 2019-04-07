@@ -1,0 +1,30 @@
+v1.4.0-rc1 December 11, 2018
+----------------------------
+
+Release Notes
+-------------
+Java chaincode v2.0.0-alpha includes multiple improvement
+
+Javaenv docker images size reduce
+Integration tests improvement
+Java chaincode extra validation during start
+Added support for maven projects
+
+baseimage version: not used anymore, used openjdk:8-slim
+Java version:      openjdk version "1.8.0_181"
+
+Known Vulnerabilities
+---------------------
+none
+
+Resolved Vulnerabilities
+------------------------
+none
+
+Known Issues & Workarounds
+--------------------------
+none
+
+Change Log
+----------
+https://github.com/hyperledger/fabric-chaincode-java/blob/master/CHANGELOG.md#v200-alpha
