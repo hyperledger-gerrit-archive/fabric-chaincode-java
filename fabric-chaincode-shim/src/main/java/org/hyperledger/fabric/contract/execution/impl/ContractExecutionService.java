@@ -54,7 +54,13 @@ public class ContractExecutionService implements ExecutionService {
 
         Chaincode.Response response;
         try {
-            response = (Chaincode.Response)rd.getMethod().invoke(proxyObject, args.toArray());
+            Object value = rd.getMethod().invoke(proxyObject, args.toArray());
+            if (value==null){
+                response = ResponseUtils.newSuccessResponse();
+            } else {
+                response = ResponseUtils.newSuccessResponse(value.toString());
+            }
+            
         } catch (IllegalAccessException|InvocationTargetException e) {
             logger.warn("Error during contract method invocation", e);
             response = ResponseUtils.newErrorResponse(e);
