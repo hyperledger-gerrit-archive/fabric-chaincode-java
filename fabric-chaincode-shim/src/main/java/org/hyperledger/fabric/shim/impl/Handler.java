@@ -262,7 +262,6 @@ public class Handler {
                     queueOutboundChaincodeMessage(newCompletedEventMessage(message.getChannelId(), message.getTxid(), result, stub.getEvent()));
                 }
             } catch (InvalidProtocolBufferException | RuntimeException e) {
-                e.printStackTrace();
                 logger.severe(format("[%-8.8s] Init failed. Sending %s: %s", message.getTxid(), ERROR, e));
                 queueOutboundChaincodeMessage(newErrorEventMessage(message.getChannelId(), message.getTxid(), e));
             } finally {
