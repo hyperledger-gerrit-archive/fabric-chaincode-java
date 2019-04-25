@@ -1,14 +1,21 @@
 /*
-Copyright IBM Corp., DTCC All Rights Reserved.
+Copyright IBM Corp. All Rights Reserved.
 
 SPDX-License-Identifier: Apache-2.0
 */
 
 package org.hyperledger.fabric.contract;
 
+import java.util.logging.Level;
+import java.util.logging.LogRecord;
+import java.util.logging.Logger;
+import java.util.logging.SimpleFormatter;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.hyperledger.fabric.contract.execution.ExecutionFactory;
 import org.hyperledger.fabric.contract.execution.ExecutionService;
 import org.hyperledger.fabric.contract.execution.InvocationRequest;
+import org.hyperledger.fabric.contract.metadata.MetadataBuilder;
 import org.hyperledger.fabric.contract.routing.ContractScanner;
 import org.hyperledger.fabric.contract.routing.Routing;
 import org.hyperledger.fabric.contract.routing.TransactionType;
@@ -22,7 +29,7 @@ import org.hyperledger.fabric.shim.ResponseUtils;
  * Implements {@link org.hyperledger.fabric.shim.Chaincode} interface.
  */
 public class ContractRouter extends ChaincodeBase {
-
+    private static Log logger = LogFactory.getLog(ContractRouter.class);
     private ContractScanner scanner;
     private ExecutionService executor;
 
@@ -68,9 +75,37 @@ public class ContractRouter extends ChaincodeBase {
     }
 
     public static void main(String[] args) {
+        loggingSetup();
         ContractRouter cfc = new ContractRouter();
         cfc.findAllContracts();
+
+        // commence routing, once this has returned the chaincode and contract api is 'open for business'
         cfc.startRouting(args);
+
+        String jsonmetadata = MetadataBuilder.getMetadata();
+        logger.info("Metadata follows:");
+        logger.info(MetadataBuilder.debugString());
+        logger.info("----------------------------------");
+    }
+
+    private static void loggingSetup(){
+        System.setProperty("java.util.logging.SimpleFormatter.format", "%1$tH:%1$tM:%1$tS:%1$tL %4$-7.7s %2$s %5$s%6$s%n");
+        final Logger rootLogger = Logger.getLogger("");
+        for (java.util.logging.Handler handler : rootLogger.getHandlers()) {
+            handler.setLevel(Level.ALL);
+             handler.setFormatter(new SimpleFormatter() {
+                 @Override
+                 public synchronized String format(LogRecord record) {
+                     return super.format(record)
+                             .replaceFirst(".*SEVERE\\s*\\S*\\s*\\S*", "\u001B[1;31m$0\u001B[0m")
+                             .replaceFirst(".*WARNING\\s*\\S*\\s*\\S*", "\u001B[1;33m$0\u001B[0m")
+                             .replaceFirst(".*CONFIG\\s*\\S*\\s*\\S*", "\u001B[35m$0\u001B[0m")
+                             .replaceFirst(".*FINE\\s*\\S*\\s*\\S*", "\u001B[36m$0\u001B[0m")
+                             .replaceFirst(".*FINER\\s*\\S*\\s*\\S*", "\u001B[36m$0\u001B[0m")
+                             .replaceFirst(".*FINEST\\s*\\S*\\s*\\S*", "\u001B[36m$0\u001B[0m");
+                 }
+             });
+        }
     }
 
     Routing getRouting(InvocationRequest request) {

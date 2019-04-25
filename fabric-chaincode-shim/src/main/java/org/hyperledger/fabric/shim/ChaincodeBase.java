@@ -198,9 +198,9 @@ public abstract class ChaincodeBase implements Chaincode {
         logger.info("CORE_CHAINCODE_ID_NAME: " + this.id);
         logger.info("CORE_PEER_ADDRESS: " + this.host + ":" + this.port);
         logger.info("CORE_PEER_TLS_ENABLED: " + this.tlsEnabled);
-        logger.info("CORE_PEER_TLS_ROOTCERT_FILE" + this.tlsClientRootCertPath);
-        logger.info("CORE_TLS_CLIENT_KEY_PATH" + this.tlsClientKeyPath);
-        logger.info("CORE_TLS_CLIENT_CERT_PATH" + this.tlsClientCertPath);
+        logger.info("CORE_PEER_TLS_ROOTCERT_FILE: " + this.tlsClientRootCertPath);
+        logger.info("CORE_TLS_CLIENT_KEY_PATH: " + this.tlsClientKeyPath);
+        logger.info("CORE_TLS_CLIENT_CERT_PATH: " + this.tlsClientCertPath);
     }
 
     void processEnvironmentOptions() {
@@ -228,9 +228,9 @@ public abstract class ChaincodeBase implements Chaincode {
         logger.info("CORE_CHAINCODE_ID_NAME: " + this.id);
         logger.info("CORE_PEER_ADDRESS: " + this.host);
         logger.info("CORE_PEER_TLS_ENABLED: " + this.tlsEnabled);
-        logger.info("CORE_PEER_TLS_ROOTCERT_FILE" + this.tlsClientRootCertPath);
-        logger.info("CORE_TLS_CLIENT_KEY_PATH" + this.tlsClientKeyPath);
-        logger.info("CORE_TLS_CLIENT_CERT_PATH" + this.tlsClientCertPath);
+        logger.info("CORE_PEER_TLS_ROOTCERT_FILE: " + this.tlsClientRootCertPath);
+        logger.info("CORE_TLS_CLIENT_KEY_PATH: " + this.tlsClientKeyPath);
+        logger.info("CORE_TLS_CLIENT_CERT_PATH: " + this.tlsClientCertPath);
     }
 
     ManagedChannelBuilder<?> newChannelBuilder() throws IOException {
