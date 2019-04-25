@@ -38,4 +38,8 @@ public class RoutingImpl implements Routing {
         return type;
     }
 
+    @Override
+    public String toString() {
+    	return method.getName()+":"+clazz.getCanonicalName()+":"+contract.getClass().getCanonicalName();
+    }
 }
