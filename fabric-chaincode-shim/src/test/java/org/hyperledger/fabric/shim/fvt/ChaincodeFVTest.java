@@ -11,6 +11,7 @@ import org.hyperledger.fabric.protos.peer.ChaincodeShim;
 import org.hyperledger.fabric.protos.peer.ProposalResponsePackage;
 import org.hyperledger.fabric.shim.ChaincodeBase;
 import org.hyperledger.fabric.shim.ChaincodeStub;
+import org.hyperledger.fabric.shim.ResponseUtils;
 import org.hyperledger.fabric.shim.chaincode.EmptyChaincode;
 import org.hyperledger.fabric.shim.ext.sbe.StateBasedEndorsement;
 import org.hyperledger.fabric.shim.ext.sbe.impl.StateBasedEndorsementFactory;
@@ -75,12 +76,12 @@ public class ChaincodeFVTest {
         ChaincodeBase cb = new ChaincodeBase() {
             @Override
             public Response init(ChaincodeStub stub) {
-                return newSuccessResponse();
+                return ResponseUtils.newSuccessResponse();
             }
 
             @Override
             public Response invoke(ChaincodeStub stub) {
-                return newSuccessResponse();
+                return ResponseUtils.newSuccessResponse();
             }
         };
 
@@ -111,7 +112,7 @@ public class ChaincodeFVTest {
                 assertThat(stub.getFunction(), is("init"));
                 assertThat(stub.getArgs().size(), is(3));
                 stub.putState("a", ByteString.copyFromUtf8("100").toByteArray());
-                return newSuccessResponse("OK response1");
+                return ResponseUtils.newSuccessResponse("OK response1");
             }
 
             @Override
@@ -123,7 +124,7 @@ public class ChaincodeFVTest {
                 String aVal = stub.getStringState(aKey);
                 stub.putState(aKey, ByteString.copyFromUtf8("120").toByteArray());
                 stub.delState("delKey");
-                return newSuccessResponse("OK response2");
+                return ResponseUtils.newSuccessResponse("OK response2");
             }
         };
 
@@ -177,7 +178,7 @@ public class ChaincodeFVTest {
         ChaincodeBase cb = new ChaincodeBase() {
             @Override
             public Response init(ChaincodeStub stub) {
-                return newSuccessResponse("OK response1");
+                return ResponseUtils.newSuccessResponse("OK response1");
             }
 
             @Override
@@ -187,7 +188,7 @@ public class ChaincodeFVTest {
                 StateBasedEndorsement stateBasedEndorsement = StateBasedEndorsementFactory.getInstance().newStateBasedEndorsement(epBytes);
                 assertThat(stateBasedEndorsement.listOrgs().size(), is(2));
                 stub.setStateValidationParameter(aKey, stateBasedEndorsement.policy());
-                return newSuccessResponse("OK response2");
+                return ResponseUtils.newSuccessResponse("OK response2");
             }
         };
 
@@ -241,7 +242,7 @@ public class ChaincodeFVTest {
         ChaincodeBase cb = new ChaincodeBase() {
             @Override
             public Response init(ChaincodeStub stub) {
-                return newSuccessResponse("OK response1");
+                return ResponseUtils.newSuccessResponse("OK response1");
             }
 
             @Override
@@ -261,7 +262,7 @@ public class ChaincodeFVTest {
                 } catch (Exception e) {
                     fail("No exception expected");
                 }
-                return newSuccessResponse("OK response2");
+                return ResponseUtils.newSuccessResponse("OK response2");
             }
         };
 
@@ -318,7 +319,7 @@ public class ChaincodeFVTest {
         ChaincodeBase cb = new ChaincodeBase() {
             @Override
             public Response init(ChaincodeStub stub) {
-                return newSuccessResponse("OK response1");
+                return ResponseUtils.newSuccessResponse("OK response1");
             }
 
             @Override
@@ -335,7 +336,7 @@ public class ChaincodeFVTest {
                 } catch (Exception e) {
                     fail("No exception expected");
                 }
-                return newSuccessResponse("OK response2");
+                return ResponseUtils.newSuccessResponse("OK response2");
             }
         };
 
@@ -390,7 +391,7 @@ public class ChaincodeFVTest {
         ChaincodeBase cb = new ChaincodeBase() {
             @Override
             public Response init(ChaincodeStub stub) {
-                return newSuccessResponse("OK response1");
+                return ResponseUtils.newSuccessResponse("OK response1");
             }
 
             @Override
@@ -407,7 +408,7 @@ public class ChaincodeFVTest {
                 } catch (Exception e) {
                     fail("No exception expected");
                 }
-                return newSuccessResponse("OK response2");
+                return ResponseUtils.newSuccessResponse("OK response2");
             }
         };
 
@@ -452,13 +453,13 @@ public class ChaincodeFVTest {
         ChaincodeBase cb = new ChaincodeBase() {
             @Override
             public Response init(ChaincodeStub stub) {
-                return newSuccessResponse("OK response1");
+                return ResponseUtils.newSuccessResponse("OK response1");
             }
 
             @Override
             public Response invoke(ChaincodeStub stub) {
-                Response response = stub.invokeChaincode("anotherChaincode", Collections.EMPTY_LIST);
-                return newSuccessResponse("OK response2");
+                Response response = stub.invokeChaincode("anotherChaincode", Collections.emptyList());
+                return ResponseUtils.newSuccessResponse("OK response2");
             }
         };
 
@@ -499,12 +500,12 @@ public class ChaincodeFVTest {
         ChaincodeBase cb = new ChaincodeBase() {
             @Override
             public Response init(ChaincodeStub stub) {
-                return newErrorResponse("Wrong response1");
+                return ResponseUtils.newErrorResponse("Wrong response1");
             }
 
             @Override
             public Response invoke(ChaincodeStub stub) {
-                return newErrorResponse("Wrong response2");
+                return ResponseUtils.newErrorResponse("Wrong response2");
             }
         };
 
@@ -550,12 +551,12 @@ public class ChaincodeFVTest {
                     Thread.sleep(10);
                 } catch (InterruptedException e) {
                 }
-                return newSuccessResponse();
+                return ResponseUtils.newSuccessResponse();
             }
 
             @Override
             public Response invoke(ChaincodeStub stub) {
-                return newSuccessResponse();
+                return ResponseUtils.newSuccessResponse();
             }
         };
 
