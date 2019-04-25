@@ -5,7 +5,16 @@ SPDX-License-Identifier: Apache-2.0
 */
 package org.hyperledger.fabric.contract;
 
-import contract.SampleContract;
+import static org.hamcrest.Matchers.contains;
+import static org.hamcrest.Matchers.empty;
+import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.notNullValue;
+import static org.junit.Assert.assertThat;
+
+import java.util.ArrayList;
+import java.util.List;
+
 import org.hyperledger.fabric.contract.annotation.Contract;
 import org.hyperledger.fabric.contract.execution.ExecutionFactory;
 import org.hyperledger.fabric.contract.execution.InvocationRequest;
@@ -17,13 +26,7 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
 
-import java.util.ArrayList;
-import java.util.List;
-
-import static org.hamcrest.Matchers.*;
-import static org.junit.Assert.*;
-
-import static java.nio.charset.StandardCharsets.UTF_8;
+import contract.SampleContract;
 public class ContractRouterTest {
     @Rule
     public ExpectedException thrown = ExpectedException.none();
@@ -138,4 +141,9 @@ public class ContractRouterTest {
         assertThat(response.getStatus(), is(Chaincode.Response.Status.INTERNAL_SERVER_ERROR));
     }
 
+
+    @Test
+    public void main(){
+        ContractRouter.main(new String[]{});
+    }
 }
