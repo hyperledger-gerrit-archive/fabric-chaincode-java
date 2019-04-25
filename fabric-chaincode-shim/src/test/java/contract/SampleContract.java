@@ -5,6 +5,7 @@ SPDX-License-Identifier: Apache-2.0
 */
 package contract;
 
+import io.swagger.v3.oas.annotations.info.Contact;
 import io.swagger.v3.oas.annotations.info.Info;
 import org.hyperledger.fabric.contract.Context;
 import org.hyperledger.fabric.contract.ContractInterface;
@@ -19,7 +20,7 @@ import java.util.List;
 @Contract(
         namespace = "samplecontract",
         info = @Info(
-
+                contact = @Contact( email = "fred@example.com" )
         )
 )
 public class SampleContract implements ContractInterface {
