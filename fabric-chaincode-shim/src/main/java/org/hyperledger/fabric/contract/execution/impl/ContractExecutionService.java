@@ -40,6 +40,8 @@ public class ContractExecutionService implements ExecutionService {
 
     @Override
     public Chaincode.Response executeRequest(Routing rd, InvocationRequest req, ChaincodeStub stub) {
+    	logger.debug("Routing Request");
+    	logger.debug(rd);
         final ContractInterface contractObject = rd.getContractObject();
         final Class<?> contractClass = rd.getContractClass();
         if (!proxies.containsKey(req.getNamespace())) {
@@ -62,9 +64,13 @@ public class ContractExecutionService implements ExecutionService {
                 String str = value.toString();
                 response = ResponseUtils.newSuccessResponse(str.getBytes(UTF_8));
             }
-        } catch (IllegalAccessException|InvocationTargetException e) {
+        } catch (IllegalAccessException e) {
             logger.warn("Error during contract method invocation", e);
+            System.out.println(e.toString());
             response = ResponseUtils.newErrorResponse(e);
+        } catch (InvocationTargetException e) {
+            logger.warn("Error during contract method invocation", e);
+            response = ResponseUtils.newErrorResponse(e.getCause());
         }
         return response;
     }

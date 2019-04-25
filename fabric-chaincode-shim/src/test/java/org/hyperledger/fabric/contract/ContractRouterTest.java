@@ -5,7 +5,16 @@ SPDX-License-Identifier: Apache-2.0
 */
 package org.hyperledger.fabric.contract;
 
-import contract.SampleContract;
+import static org.hamcrest.Matchers.contains;
+import static org.hamcrest.Matchers.empty;
+import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.notNullValue;
+import static org.junit.Assert.assertThat;
+
+import java.util.ArrayList;
+import java.util.List;
+
 import org.hyperledger.fabric.contract.annotation.Contract;
 import org.hyperledger.fabric.contract.execution.ExecutionFactory;
 import org.hyperledger.fabric.contract.execution.InvocationRequest;
@@ -16,6 +25,8 @@ import org.hyperledger.fabric.shim.ChaincodeStub;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
+
+import contract.SampleContract;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -31,7 +42,7 @@ public class ContractRouterTest {
 
     @Test
     public void testCreateAndScan() {
-        ContractRouter r = new ContractRouter();
+        ContractRouter r = new ContractRouter(new String[] {});
         r.findAllContracts();
         ChaincodeStub s = new ChaincodeStubNaiveImpl();
 
@@ -68,7 +79,7 @@ public class ContractRouterTest {
 
     @Test
     public void testInit() {
-        ContractRouter r = new ContractRouter();
+        ContractRouter r = new ContractRouter(new String[] {});
         r.findAllContracts();
         ChaincodeStub s = new ChaincodeStubNaiveImpl();
 
@@ -102,7 +113,7 @@ public class ContractRouterTest {
 
     @Test
     public void testInvoke() {
-        ContractRouter r = new ContractRouter();
+        ContractRouter r = new ContractRouter(new String[] {});
         r.findAllContracts();
         ChaincodeStub s = new ChaincodeStubNaiveImpl();
 
@@ -138,4 +149,9 @@ public class ContractRouterTest {
         assertThat(response.getStatus(), is(Chaincode.Response.Status.INTERNAL_SERVER_ERROR));
     }
 
+
+    @Test
+    public void main(){
+        ContractRouter.main(new String[]{});
+    }
 }

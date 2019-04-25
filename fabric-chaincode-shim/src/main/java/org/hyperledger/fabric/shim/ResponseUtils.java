@@ -30,7 +30,7 @@ public class ResponseUtils {
     }
 
     public static Chaincode.Response newErrorResponse(String message, byte[] payload) {
-        return new Chaincode.Response(INTERNAL_SERVER_ERROR, message, payload);
+        return new Chaincode.Response(INTERNAL_SERVER_ERROR, (message==null?"":message), payload);
     }
 
     public static Chaincode.Response newErrorResponse() {
