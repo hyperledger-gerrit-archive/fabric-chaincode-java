@@ -1,0 +1,7 @@
+Verified+1: Hyperledger Jobbuilder <jobbuilder@jenkins.hyperledger.org>
+Code-Review+2: Gennady Laventman <gennady@il.ibm.com>
+Submitted-by: Gennady Laventman <gennady@il.ibm.com>
+Submitted-at: Mon, 29 Apr 2019 11:01:42 +0000
+Reviewed-on: https://gerrit.hyperledger.org/r/30980
+Project: fabric-chaincode-java
+Branch: refs/heads/master
