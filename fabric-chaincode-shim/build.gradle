@@ -80,7 +80,7 @@ jacocoTestCoverageVerification {
                         'org.hyperledger.fabric.contract.execution.impl.ContractInvocationRequest',
                         'org.hyperledger.fabric.contract.routing.TransactionType']
             limit {
-                minimum = 0.86
+                minimum = 0.086
             }
         }
 
@@ -93,7 +93,7 @@ jacocoTestCoverageVerification {
                         'org.hyperledger.fabric.contract.routing.RoutingRegistry',
                         'org.hyperledger.fabric.shim.impl.Handler']
             limit {
-                minimum = 0.71
+                minimum = 0.071
             }
         }
     }

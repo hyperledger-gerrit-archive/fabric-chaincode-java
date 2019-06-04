@@ -9,11 +9,13 @@ import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.util.function.Supplier;
 import java.util.logging.Level;
+import java.util.logging.LogManager;
 
 public class Logger extends java.util.logging.Logger{
 
     protected Logger(String name) {
         super(name, null);
+        this.setParent(java.util.logging.Logger.getLogger("org.hyperledger.fabric"));
     }
 
     public static Logger getLogger(String name) {
@@ -29,7 +31,9 @@ public class Logger extends java.util.logging.Logger{
     }
 
     public static Logger getLogger(Class<?> class1) {
-        return Logger.getLogger(class1.getName());
+        Logger l =  Logger.getLogger(class1.getName());
+        LogManager.getLogManager().addLogger(l);
+        return l;
     }
 
     public void error(String message) {

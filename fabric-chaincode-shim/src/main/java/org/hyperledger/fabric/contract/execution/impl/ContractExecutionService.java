@@ -6,11 +6,8 @@ SPDX-License-Identifier: Apache-2.0
 
 package org.hyperledger.fabric.contract.execution.impl;
 
-import static java.nio.charset.StandardCharsets.UTF_8;
-
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
-import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -20,10 +17,15 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.hyperledger.fabric.contract.Context;
 import org.hyperledger.fabric.contract.ContractInterface;
+import org.hyperledger.fabric.contract.ContractRuntimeException;
 import org.hyperledger.fabric.contract.annotation.Transaction;
 import org.hyperledger.fabric.contract.execution.ExecutionService;
 import org.hyperledger.fabric.contract.execution.InvocationRequest;
+import org.hyperledger.fabric.contract.execution.JSONTransactionSerializer;
+import org.hyperledger.fabric.contract.metadata.TypeSchema;
+import org.hyperledger.fabric.contract.routing.ParameterDefinition;
 import org.hyperledger.fabric.contract.routing.TxFunction;
+import org.hyperledger.fabric.contract.routing.TypeRegistry;
 import org.hyperledger.fabric.shim.Chaincode;
 import org.hyperledger.fabric.shim.ChaincodeStub;
 import org.hyperledger.fabric.shim.ResponseUtils;
@@ -36,13 +38,22 @@ public class ContractExecutionService implements ExecutionService {
 
     private static Log logger = LogFactory.getLog(ContractExecutionService.class);
 
+    private JSONTransactionSerializer serializer;
+
     Map<String, Object> proxies = new HashMap<>();
     Map<String, ProxyMethodInterceptor> methodInterceptors = new HashMap<>();
 
+    public ContractExecutionService(TypeRegistry typeRegistry) {
+    	// FUTURE: Permit this to swapped out as per node.js
+    	this.serializer = new JSONTransactionSerializer(typeRegistry);
+	}
+
     @Override
-    public Chaincode.Response executeRequest(TxFunction.Routing rd, InvocationRequest req, ChaincodeStub stub) {
+    public Chaincode.Response executeRequest(TxFunction txFn, InvocationRequest req, ChaincodeStub stub) {
     	logger.debug("Routing Request");
+    	TxFunction.Routing rd = txFn.getRouting();
     	logger.debug(rd);
+
         final ContractInterface contractObject = rd.getContractObject();
         final Class<?> contractClass = rd.getContractClass();
         if (!proxies.containsKey(req.getNamespace())) {
@@ -54,7 +65,7 @@ public class ContractExecutionService implements ExecutionService {
         Object proxyObject = proxies.get(req.getNamespace());
         ProxyMethodInterceptor interceptor = methodInterceptors.get(req.getNamespace());
         interceptor.setContextForThread(stub);
-        final List<Object> args = convertArgs(req.getArgs(), rd.getMethod().getParameterTypes());
+        final List<Object> args = convertArgs(req.getArgs(), txFn);
 
         Chaincode.Response response;
         try {
@@ -62,8 +73,7 @@ public class ContractExecutionService implements ExecutionService {
             if (value==null){
                 response = ResponseUtils.newSuccessResponse();
             } else {
-                String str = value.toString();
-                response = ResponseUtils.newSuccessResponse(str.getBytes(UTF_8));
+                response = ResponseUtils.newSuccessResponse(convertReturn(value,txFn));
             }
         } catch (IllegalAccessException e) {
             logger.warn("Error during contract method invocation", e);
@@ -75,15 +85,25 @@ public class ContractExecutionService implements ExecutionService {
         return response;
     }
 
-    private List<Object> convertArgs(List<byte[]> stubArgs, Class<?>[] methodParameterTypes) {
+    private byte[] convertReturn(Object obj,TxFunction txFn) {
+    	byte[] buffer;
+    	TypeSchema ts = txFn.getReturnSchema();
+    	buffer = serializer.toBuffer(obj, ts);
+
+    	return buffer;
+    }
+
+    private List<Object> convertArgs(List<byte[]> stubArgs, TxFunction txFn) {
+
+    	List<ParameterDefinition> schemaParams = txFn.getParamsList();
         List<Object> args = new ArrayList<>();
-        for (int i = 0; i < methodParameterTypes.length; i++) {
-            Class<?> param = methodParameterTypes[i];
-            if (param.isArray()) {
-                args.add(stubArgs.get(i));
-            } else {
-                args.add(new String(stubArgs.get(i), StandardCharsets.UTF_8));
-            }
+        for (int i = 0; i < schemaParams.size(); i++) {
+        	try {
+				args.add(serializer.fromBuffer(stubArgs.get(i),schemaParams.get(i).getSchema()));
+			} catch (InstantiationException | IllegalAccessException e) {
+				ContractRuntimeException cre = new ContractRuntimeException(e);
+				throw cre;
+			}
         }
         return args;
     }
@@ -100,6 +120,7 @@ public class ContractExecutionService implements ExecutionService {
     }
 
     private static class ProxyMethodInterceptor implements MethodInterceptor {
+    	//TODO: Check if this is really needed
         Class<?> contractClass;
         ContractInterface contractObject;
         ThreadLocal<Context> context = new ThreadLocal<>();
