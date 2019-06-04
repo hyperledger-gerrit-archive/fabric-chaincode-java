@@ -26,9 +26,6 @@ import org.hyperledger.fabric.contract.routing.RoutingRegistry;
 import org.hyperledger.fabric.contract.routing.TransactionType;
 import org.hyperledger.fabric.contract.routing.TxFunction;
 import org.hyperledger.fabric.contract.routing.TypeRegistry;
-import org.hyperledger.fabric.contract.routing.impl.DataTypeDefinitionImpl;
-import org.hyperledger.fabric.contract.routing.impl.RoutingRegistryImpl;
-import org.hyperledger.fabric.contract.routing.impl.TypeRegistryImpl;
 import org.json.JSONObject;
 import org.json.JSONTokener;
 
@@ -44,8 +41,7 @@ import io.swagger.v3.oas.annotations.info.Info;
 public class MetadataBuilder {
 	private static Logger logger = Logger.getLogger(MetadataBuilder.class);
 
-	// Custom sub-type of Map that helps with the case where if there's no value then do not
-	// insert the property at all
+
 	@SuppressWarnings("serial")
 	static class MetadataMap<K, V> extends HashMap<K, V> {
 
@@ -96,7 +92,7 @@ public class MetadataBuilder {
 		Collection<ContractDefinition> contractDefinitions = registry.getAllDefinitions();
 		contractDefinitions.forEach(MetadataBuilder::addContract);
 
-		Collection<DataTypeDefinitionImpl> dataTypes = typeRegistry.getAllDataTypes();
+		Collection<DataTypeDefinition> dataTypes = typeRegistry.getAllDataTypes();
 		dataTypes.forEach(MetadataBuilder::addComponent);
 
 		// need to validate that the metadata that has been created is really valid
@@ -129,7 +125,8 @@ public class MetadataBuilder {
 	 */
 	@SuppressWarnings("serial")
 	public static String addContract(ContractDefinition contractDefinition) {
-		Class<?> contractClass = contractDefinition.getContractImpl().getClass();
+
+		String key = contractDefinition.getName();
 
 		Contract annotation = contractDefinition.getAnnotation();
 
@@ -153,7 +150,7 @@ public class MetadataBuilder {
 		});
 		infoMap.put("version", info.version());
 
-		String key = contractClass.getSimpleName();
+
 		HashMap<String, Serializable> contract = new HashMap<String, Serializable>();
 		contract.put("name", key);
 		contract.put("transactions", new ArrayList<Object>());
@@ -173,61 +170,17 @@ public class MetadataBuilder {
 		return key;
 	}
 
-	/**
-	 * Provide a mapping between the Java Language types and the OpenAPI based types
-	 * @param clz
-	 * @return
-	 */
-	public static Map<String, Object> propertySchema(Class<?> clz) {
-		Map<String, Object> schema = new HashMap<String, Object>();
-		String className = clz.getSimpleName();
-		switch (className) {
-		case "String":
-			schema.put("type", className.toLowerCase());
-			break;
-		case "byte":
-			schema.put("type", "integer");
-			schema.put("format", "int8");
-			break;
-		case "short":
-			schema.put("type", "integer");
-			schema.put("format", "int16");
-			break;
-		case "int":
-			schema.put("type", "integer");
-			schema.put("format", "int32");
-			break;
-		case "long":
-			schema.put("type", "integer");
-			schema.put("format", "int64");
-			break;
-		case "double":
-			schema.put("type", "number");
-			schema.put("format", "double");
-			break;
-		case "float":
-			schema.put("type", "number");
-			schema.put("format", "float");
-			break;
-		case "boolean":
-			schema.put("type", "boolean");
-			break;
-		default:
-			return null;
-		}
 
-		return schema;
-	}
 
 	/**
-	 * Adds a new transaction function to the metadata for the given contract key
+	 * Adds a new transaction function to the metadata for the given contract
 	 *
 	 * @param method      Method object representing the transaction function
 	 * @param contractKey Key of the contract that this function belongs to
 	 */
 	public static void addTransaction(TxFunction txFunction, String contractName) {
-		Map<String, Object> transaction = new HashMap<String, Object>();
-		Map<String, Object> returnSchema = propertySchema(txFunction.getReturnType());
+		TypeSchema transaction = new TypeSchema();
+		TypeSchema returnSchema = txFunction.getReturnSchema();
 		if (returnSchema != null) {
 			transaction.put("returns", returnSchema);
 		}
@@ -239,17 +192,17 @@ public class MetadataBuilder {
 		@SuppressWarnings("unchecked")
 		List<Object> txs = (ArrayList<Object>) contract.get("transactions");
 
-		java.lang.reflect.Parameter[] params = txFunction.getParameters();
-		ArrayList<HashMap<String, Object>> paramsList = new ArrayList<HashMap<String, Object>>();
 
-		for (java.lang.reflect.Parameter parameter : params) {
-			HashMap<String, Object> paramMap = new HashMap<String, Object>();
-			paramMap.put("name", parameter.getName());
-			paramMap.put("schema", propertySchema(parameter.getType()));
+		ArrayList<TypeSchema> paramsList = new ArrayList<TypeSchema>();
+		txFunction.getParamsList().forEach(pd -> {
+			TypeSchema paramMap = pd.getSchema();
+			paramMap.put("name", pd.getName());
+//			paramMap.put("schema", pd.getSchema());
 			paramsList.add(paramMap);
-		}
+		});
 
 		transaction.put("parameters", paramsList);
+
 		if (tags.size() != 0) {
 			transaction.put("tags", tags.toArray());
 			transaction.put("name", txFunction.getName());
