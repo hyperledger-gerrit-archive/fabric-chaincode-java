@@ -47,10 +47,6 @@ public class ContractRouterTest {
         assertThat(request.getMethod(), is(equalTo("t1")));
         assertThat(request.getRequestName(), is(equalTo("samplecontract:t1")));
         assertThat(request.getArgs(), is(contains(s.getArgs().get(1))));
-        org.hyperledger.fabric.contract.routing.TxFunction.Routing routing = r.getRouting(request);
-        assertThat(routing.getContractClass().getName(), is(equalTo(SampleContract.class.getName())));
-        assertThat(routing.getMethod().getName(), is(equalTo("t1")));
-
     }
 
     @Test
