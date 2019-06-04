@@ -1,5 +1,5 @@
 /*
-Copyright IBM Corp., DTCC All Rights Reserved.
+Copyright IBM Corp.  All Rights Reserved.
 
 SPDX-License-Identifier: Apache-2.0
 */
@@ -18,7 +18,5 @@ import static java.lang.annotation.RetentionPolicy.RUNTIME;
 @Retention(RUNTIME)
 @Target(ElementType.TYPE)
 public @interface DataType {
-    String regex() default "";
-
 	String namespace() default "";
 }

@@ -1,5 +1,5 @@
 /*
-Copyright IBM Corp., DTCC All Rights Reserved.
+Copyright IBM Corp. All Rights Reserved.
 
 SPDX-License-Identifier: Apache-2.0
 */
@@ -16,6 +16,7 @@ import static java.lang.annotation.RetentionPolicy.RUNTIME;
 
 /**
  * Class level annotation that identifies this class as being a contract.
+ * Can supply information and an alternative name for the contract rather than the classname
  */
 @Retention(RUNTIME)
 @Target(ElementType.TYPE)
