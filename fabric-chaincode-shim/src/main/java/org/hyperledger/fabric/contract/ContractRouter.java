@@ -14,7 +14,6 @@ import org.hyperledger.fabric.contract.metadata.MetadataBuilder;
 import org.hyperledger.fabric.contract.routing.ContractDefinition;
 import org.hyperledger.fabric.contract.routing.RoutingRegistry;
 import org.hyperledger.fabric.contract.routing.TxFunction;
-import org.hyperledger.fabric.contract.routing.TxFunction.Routing;
 import org.hyperledger.fabric.contract.routing.TypeRegistry;
 import org.hyperledger.fabric.contract.routing.impl.RoutingRegistryImpl;
 import org.hyperledger.fabric.contract.routing.impl.TypeRegistryImpl;
@@ -47,15 +46,16 @@ public class ContractRouter extends ChaincodeBase {
 		super.processCommandLineOptions(args);
 
 		super.validateOptions();
+		logger.debug("ContractRouter<init>");
 		registry = new RoutingRegistryImpl();
 		typeRegistry = new TypeRegistryImpl();
-		executor = ExecutionFactory.getInstance().createExecutionService();
+		executor = ExecutionFactory.getInstance().createExecutionService(typeRegistry);
 	}
 
 	/**
 	 * Locate all the contracts that are available on the classpath
 	 */
-	void findAllContracts() {
+	protected void findAllContracts() {
 			registry.findAndSetContracts(this.typeRegistry);
 	}
 
@@ -77,21 +77,23 @@ public class ContractRouter extends ChaincodeBase {
 
 	@Override
 	public Response init(ChaincodeStub stub) {
-		InvocationRequest request = ExecutionFactory.getInstance().createRequest(stub);
-		Routing routing = getRouting(request);
-
-		logger.debug(() -> "Got routing:" + routing);
-		return executor.executeRequest(routing, request, stub);
+		logger.info(() -> "Got init routing request");
+		if (stub.getStringArgs().size() > 0) {
+			return invoke(stub);	
+		} else {
+			return ResponseUtils.newSuccessResponse();
+		}
+		
 	}
 
 	@Override
 	public Response invoke(ChaincodeStub stub) {
-		logger.debug(() -> "Got the invocations:" + stub.getFunction() + " " + stub.getParameters());
+		logger.info(() -> "Got the invoke request for:" + stub.getFunction() + " " + stub.getParameters());
 		InvocationRequest request = ExecutionFactory.getInstance().createRequest(stub);
-		Routing routing = getRouting(request);
+		TxFunction txFn = getRouting(request);
 
-		logger.debug(() -> "Got routing:" + routing);
-		return executor.executeRequest(routing, request, stub);
+		logger.info(() -> "Got routing:" + txFn.getRouting());
+		return executor.executeRequest(txFn, request, stub);
 	}
 
 	/**
@@ -100,11 +102,12 @@ public class ContractRouter extends ChaincodeBase {
 	 * @param request
 	 * @return
 	 */
-	TxFunction.Routing getRouting(InvocationRequest request) {
+	TxFunction getRouting(InvocationRequest request) {
     	//request name is the fully qualified 'name:txname'
         if (registry.containsRoute(request)) {
-            return registry.getRoute(request);
+            return registry.getTxFn(request);
         } else {
+        	logger.debug(()->"Namespace is "+request);
         	ContractDefinition contract = registry.getContract(request.getNamespace());
         	return contract.getUnkownRoute();
         }
@@ -125,16 +128,16 @@ public class ContractRouter extends ChaincodeBase {
 		logger.info(() -> "Metadata follows:" + MetadataBuilder.debugString());
 
 		// commence routing, once this has returned the chaincode and contract api is
-		// 'open for business'
+		// 'open for chaining'
 		cfc.startRouting();
 
 	}
 
-	private TypeRegistry getTypeRegistry() {
+	protected TypeRegistry getTypeRegistry() {
 		return this.typeRegistry;
 	}
 
-	private RoutingRegistry getRoutingRegistry() {
+	protected RoutingRegistry getRoutingRegistry() {
 		return this.registry;
 	}
 }

@@ -6,35 +6,48 @@ SPDX-License-Identifier: Apache-2.0
 package org.hyperledger.fabric.contract.routing.impl;
 
 import java.lang.reflect.Field;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import org.hyperledger.fabric.contract.annotation.Property;
-import org.hyperledger.fabric.contract.metadata.MetadataBuilder;
+import org.hyperledger.fabric.contract.metadata.TypeSchema;
 import org.hyperledger.fabric.contract.routing.DataTypeDefinition;
-
+import org.hyperledger.fabric.contract.routing.PropertyDefinition;
 
 public class DataTypeDefinitionImpl implements DataTypeDefinition {
 
-	Map<String, Object> properties = new HashMap<>();
+	List<PropertyDefinition> properties = new ArrayList<>();
+	Map<String, Field> fields = new HashMap<>();
 	String name;
 	String simpleName;
+	Class<?> clazz;
 
 	public DataTypeDefinitionImpl(Class<?> componentClass) {
+		this.clazz = componentClass;
 		this.name = componentClass.getName();
 		this.simpleName = componentClass.getSimpleName();
-        // given this class extract the property elements
-        Field[] fields = componentClass.getDeclaredFields();
+		// given this class extract the property elements
+		Field[] fields = componentClass.getDeclaredFields();
 
-        for (Field f : fields) {
-            Property propAnnotation = f.getAnnotation(Property.class);
-            if (propAnnotation != null) {
-                properties.put(f.getName(), MetadataBuilder.propertySchema(f.getType()));
-            }
-        }
+		for (Field f : fields) {
+			Property propAnnotation = f.getAnnotation(Property.class);
+			if (propAnnotation != null) {
+				PropertyDefinition propDef = new PropertyDefinitionImpl(f.getName(), f.getClass(),
+						TypeSchema.typeConvert(f.getType()), f);
+				this.properties.add(propDef);
+			}
+		}
 	}
 
-	/* (non-Javadoc)
+	public Class<?> getTypeClass() {
+		return this.clazz;
+	}
+	
+	/*
+	 * (non-Javadoc)
+	 * 
 	 * @see org.hyperledger.fabric.contract.routing.DataTypeDefinition#getName()
 	 */
 	@Override
@@ -42,16 +55,22 @@ public class DataTypeDefinitionImpl implements DataTypeDefinition {
 		return this.name;
 	}
 
-	/* (non-Javadoc)
-	 * @see org.hyperledger.fabric.contract.routing.DataTypeDefinition#getProperties()
+	/*
+	 * (non-Javadoc)
+	 * 
+	 * @see
+	 * org.hyperledger.fabric.contract.routing.DataTypeDefinition#getProperties()
 	 */
 	@Override
-	public Object getProperties() {
+	public List<PropertyDefinition> getProperties() {
 		return properties;
 	}
 
-	/* (non-Javadoc)
-	 * @see org.hyperledger.fabric.contract.routing.DataTypeDefinition#getSimpleName()
+	/*
+	 * (non-Javadoc)
+	 * 
+	 * @see
+	 * org.hyperledger.fabric.contract.routing.DataTypeDefinition#getSimpleName()
 	 */
 	@Override
 	public String getSimpleName() {

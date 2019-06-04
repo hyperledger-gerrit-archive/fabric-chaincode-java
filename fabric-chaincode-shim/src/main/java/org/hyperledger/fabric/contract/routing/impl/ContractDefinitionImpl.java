@@ -35,17 +35,19 @@ public class ContractDefinitionImpl implements ContractDefinition {
 	private TxFunction unknownTx;
 
 	public ContractDefinitionImpl(Class<?> cl)  {
-
+		
 		Contract annotation = cl.getAnnotation(Contract.class);
 		logger.debug(()->"Class Contract Annodation: "+annotation);
 
 		String annotationName = annotation.namespace();
+		
 		if (annotationName == null || annotationName.isEmpty()) {
 			this.name = cl.getSimpleName();
 		} else {
 			this.name = annotationName;
 		}
-
+		
+		
 		isDefault = (cl.getAnnotation(Default.class) != null);
 		contractAnnotation = cl.getAnnotation(Contract.class);
 		try {
@@ -108,8 +110,8 @@ public class ContractDefinitionImpl implements ContractDefinition {
 	}
 
 	@Override
-	public TxFunction.Routing getUnkownRoute() {
-		return unknownTx.getRouting();
+	public TxFunction getUnkownRoute() {
+		return unknownTx;
 	}
 
 	@Override
