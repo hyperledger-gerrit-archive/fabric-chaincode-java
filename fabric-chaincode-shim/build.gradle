@@ -15,36 +15,40 @@ tasks.withType(org.gradle.api.tasks.testing.Test) {
     systemProperty 'CORE_CHAINCODE_LOGGING_LEVEL', 'DEBUG'
 }
 
-
-dependencies {
-    compile project(':fabric-chaincode-protos')
-    compile 'io.netty:netty-tcnative-boringssl-static:2.0.15.Final'
-    compile 'io.swagger.core.v3:swagger-annotations:2.0.0'
-    compile 'org.bouncycastle:bcpkix-jdk15on:1.60'
-    compile 'org.bouncycastle:bcprov-jdk15on:1.60'
-    compile 'org.reflections:reflections:0.9.11'
-    compile group: 'cglib', name: 'cglib', version: '3.2.10'
-    implementation 'com.github.everit-org.json-schema:org.everit.json.schema:1.11.1'
-    implementation group: 'org.json', name: 'json', version: '20180813'
-}
-
 if (System.getProperty('os.arch').startsWith('s390')) {
-    dependencies {
+    println 'zOS dependencies'
+     dependencies {
         compile 'io.netty:netty-tcnative-openssl-static:2.0.15.Final'
+        compile 'org.hyperledger.fabric-chaincode-java:fabric-chaincode-protos:2.0.0-SNAPSHOT'
     }
 } else {
+    println 'x86 dependencies'
+
     dependencies {
-        compile 'io.netty:netty-tcnative-boringssl-static:2.0.15.Final'
+        compile project(':fabric-chaincode-protos')
+        compile 'io.netty:netty-tcnative-boringssl-static:2.0.7.Final'
     }
+}
+
+dependencies {
+        compile group: 'cglib', name: 'cglib', version: '3.2.10'
+        implementation 'com.github.everit-org.json-schema:org.everit.json.schema:1.11.1'
+        implementation group: 'org.json', name: 'json', version: '20180813'
+        compile 'io.swagger.core.v3:swagger-annotations:2.0.0'
+        compile 'org.bouncycastle:bcpkix-jdk15on:1.60'
+        compile 'org.bouncycastle:bcprov-jdk15on:1.60'
+        compile 'org.reflections:reflections:0.9.11'
+}
+
+configurations.compile.incoming.getResolutionResult().getAllDependencies().each { depResult  ->
+      println "{\"from\":\"" + depResult.getFrom() + "\"," + "\"requested\":\"" + depResult.getRequested() + "\"}"
 }
 
 sourceSets {
     main {
         java {
-            srcDirs 'src/main/java'
+            srcDir 'src/main/java'
         }
-
-
     }
 
     test {
@@ -52,7 +56,6 @@ sourceSets {
             srcDir 'src/test/java'
         }
     }
-
 }
 
 publishing {
