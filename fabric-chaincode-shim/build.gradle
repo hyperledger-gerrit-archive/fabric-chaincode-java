@@ -17,7 +17,8 @@ tasks.withType(org.gradle.api.tasks.testing.Test) {
 
 
 dependencies {
-    compile project(':fabric-chaincode-protos')
+    
+    compile 'io.grpc:grpc-netty-shaded:1.21.0'
     compile 'io.netty:netty-tcnative-boringssl-static:2.0.15.Final'
     compile 'io.swagger.core.v3:swagger-annotations:2.0.0'
     compile 'org.bouncycastle:bcpkix-jdk15on:1.60'
@@ -29,19 +30,25 @@ dependencies {
 }
 
 if (System.getProperty('os.arch').startsWith('s390')) {
+    repositories{
+        maven { url 'https://nexus.hyperledger.org/content/repositories/snapshots' }
+    }
+     
     dependencies {
         compile 'io.netty:netty-tcnative-openssl-static:2.0.15.Final'
+        compile 'org.hyperledger.fabric-chaincode-java:fabric-chaincode-protos:2.0.0-SNAPSHOT'
     }
 } else {
     dependencies {
         compile 'io.netty:netty-tcnative-boringssl-static:2.0.15.Final'
+        compile project(':fabric-chaincode-protos')
     }
 }
 
 sourceSets {
     main {
         java {
-            srcDirs 'src/main/java'
+            srcDir 'src/main/java'
         }
 
 
