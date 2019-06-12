@@ -16,6 +16,7 @@ import java.util.Map;
 
 import org.hyperledger.fabric.Logger;
 import org.hyperledger.fabric.contract.ContractRuntimeException;
+import org.hyperledger.fabric.contract.annotation.Serializer;
 import org.hyperledger.fabric.contract.metadata.TypeSchema;
 import org.hyperledger.fabric.contract.routing.DataTypeDefinition;
 import org.hyperledger.fabric.contract.routing.PropertyDefinition;
@@ -27,26 +28,26 @@ import org.json.JSONObject;
 /**
  * Used as a the default serialisation for transmission from SDK to Contract
  */
-public class JSONTransactionSerializer {
+@Serializer
+public class JSONTransactionSerializer implements SerializerInterface {
     private static Logger logger = Logger.getLogger(JSONTransactionSerializer.class.getName());
     private TypeRegistry typeRegistry;
 
     /**
-     * Create a new serialiser and maintain a reference to the TypeRegistry
-     *
-     * @param typeRegistry
+     * Create a new serialiser
      */
-    public JSONTransactionSerializer(TypeRegistry typeRegistry) {
-        this.typeRegistry = typeRegistry;
+    public JSONTransactionSerializer() {
+
     }
 
-    /**
-     * Convert the value supplied to a byte array, according to the TypeSchema
+    /*
+     * (non-Javadoc)
      *
-     * @param value
-     * @param ts
-     * @return
+     * @see
+     * org.hyperledger.fabric.contract.execution.SerializerInterface#toBuffer(java.
+     * lang.Object, org.hyperledger.fabric.contract.metadata.TypeSchema)
      */
+    @Override
     public byte[] toBuffer(Object value, TypeSchema ts) {
         logger.debug(() -> "Schema to convert is " + ts);
         byte[] buffer = null;
@@ -75,17 +76,14 @@ public class JSONTransactionSerializer {
         return buffer;
     }
 
-    /**
-     * Take the byte buffer and return the object as required
+    /*
+     * (non-Javadoc)
      *
-     * @param buffer Byte buffer from the wire
-     * @param ts     TypeSchema representing the type
-     *
-     * @return Object created; relies on Java auto-boxing for primitives
-     *
-     * @throws InstantiationException
-     * @throws IllegalAccessException
+     * @see
+     * org.hyperledger.fabric.contract.execution.SerializerInterface#fromBuffer(byte
+     * [], org.hyperledger.fabric.contract.metadata.TypeSchema)
      */
+    @Override
     public Object fromBuffer(byte[] buffer, TypeSchema ts) {
         try {
             String stringData = new String(buffer, StandardCharsets.UTF_8);
@@ -181,5 +179,16 @@ public class JSONTransactionSerializer {
             throw new ContractRuntimeException("Unable to convert JSON to object", e);
         }
 
+    }
+
+    @Override
+    public String getName() {
+        return "TRANSACTION";
+    }
+
+    @Override
+    public SerializerInterface setTypeRegistry(TypeRegistry typeRegistry) {
+        this.typeRegistry = typeRegistry;
+        return this;
     }
 }

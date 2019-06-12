@@ -7,14 +7,17 @@ SPDX-License-Identifier: Apache-2.0
 package org.hyperledger.fabric.contract;
 
 import org.hyperledger.fabric.Logger;
+import org.hyperledger.fabric.contract.annotation.Serializer;
 import org.hyperledger.fabric.contract.execution.ExecutionFactory;
 import org.hyperledger.fabric.contract.execution.ExecutionService;
 import org.hyperledger.fabric.contract.execution.InvocationRequest;
+import org.hyperledger.fabric.contract.execution.SerializerInterface;
 import org.hyperledger.fabric.contract.metadata.MetadataBuilder;
 import org.hyperledger.fabric.contract.routing.ContractDefinition;
 import org.hyperledger.fabric.contract.routing.RoutingRegistry;
 import org.hyperledger.fabric.contract.routing.TxFunction;
 import org.hyperledger.fabric.contract.routing.TypeRegistry;
+import org.hyperledger.fabric.contract.routing.impl.RegistryImpl;
 import org.hyperledger.fabric.contract.routing.impl.RoutingRegistryImpl;
 import org.hyperledger.fabric.contract.routing.impl.TypeRegistryImpl;
 import org.hyperledger.fabric.shim.ChaincodeBase;
@@ -31,6 +34,7 @@ public class ContractRouter extends ChaincodeBase {
     private RoutingRegistry registry;
     private TypeRegistry typeRegistry;
     private ExecutionService executor;
+    private RegistryImpl<SerializerInterface, Serializer> serializers;
 
     /**
      * Take the arguments from the cli, and initiate processing of cli options and
@@ -49,7 +53,15 @@ public class ContractRouter extends ChaincodeBase {
         logger.debug("ContractRouter<init>");
         registry = new RoutingRegistryImpl();
         typeRegistry = new TypeRegistryImpl();
-        executor = ExecutionFactory.getInstance().createExecutionService(typeRegistry);
+        serializers = new RegistryImpl<SerializerInterface, Serializer>(Serializer.class);
+        try {
+            serializers.findAndSetContents();
+        } catch (InstantiationException | IllegalAccessException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        }
+        executor = ExecutionFactory.getInstance()
+                .createExecutionService(serializers.get("TRANSACTION").setTypeRegistry(typeRegistry));
     }
 
     /**
