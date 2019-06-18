@@ -115,7 +115,7 @@ public class MetadataBuilder {
         component.put("type", "object");
         component.put("additionalProperties", false);
 
-        Map propertiesMap = datatype.getProperties().entrySet().stream()
+        Map<String, TypeSchema> propertiesMap = datatype.getProperties().entrySet().stream()
                 .collect(Collectors.toMap(Entry::getKey, e -> (e.getValue().getSchema())));
         component.put("properties", propertiesMap);
 
@@ -240,7 +240,7 @@ public class MetadataBuilder {
         return joMetadata;
     }
 
-    public static Map getComponents() {
+    public static Map<?, ?> getComponents() {
         return componentMap;
     }
 }

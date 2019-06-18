@@ -18,5 +18,14 @@ import org.hyperledger.fabric.shim.ChaincodeStub;
  * Applications can implement their own versions if they wish to add
  * functionality.
  */
-public interface Context extends ChaincodeStub {
+public class Context {
+    protected ChaincodeStub stub;
+
+    public Context(ChaincodeStub stub) {
+        this.stub = stub;
+    }
+
+    public ChaincodeStub getStub() {
+        return this.stub;
+    }
 }
