@@ -99,7 +99,7 @@ public class MetadataBuilder {
         // need to validate that the metadata that has been created is really valid
         // it should be as it's been created by code, but this is a valuable double
         // check
-        logger.info("Validating scehma created");
+        logger.info("Validating schema created");
         MetadataBuilder.validate();
 
     }
