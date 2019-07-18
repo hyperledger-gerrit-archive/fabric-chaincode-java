@@ -6,6 +6,11 @@ SPDX-License-Identifier: Apache-2.0
 
 package org.hyperledger.fabric.contract;
 
+import java.io.UnsupportedEncodingException;
+import java.security.cert.CertificateException;
+
+import com.google.protobuf.InvalidProtocolBufferException;
+
 import org.hyperledger.fabric.shim.ChaincodeStub;
 
 /**
@@ -24,6 +29,12 @@ public class ContextFactory {
 
     public Context createContext(final ChaincodeStub stub) {
         Context newContext = new Context(stub);
+        try {
+            newContext.setClientIdentity(new ClientIdentity(stub));
+        } catch (InvalidProtocolBufferException | CertificateException | UnsupportedEncodingException e) {
+            throw new ContractRuntimeException("Could not create new client identity", e);
+        }
+
         return newContext;
     }
 
