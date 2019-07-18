@@ -7,6 +7,7 @@ SPDX-License-Identifier: Apache-2.0
 package org.hyperledger.fabric.contract;
 
 import org.hyperledger.fabric.shim.ChaincodeStub;
+import org.hyperledger.fabric.contract.ClientIdentity;
 
 /**
  *
@@ -32,6 +33,7 @@ import org.hyperledger.fabric.shim.ChaincodeStub;
  */
 public class Context {
     protected ChaincodeStub stub;
+    protected ClientIdentity clientIdentity;
 
     /**
      * Constructor
@@ -47,5 +49,23 @@ public class Context {
      */
     public ChaincodeStub getStub() {
         return this.stub;
+    }
+
+    /**
+	 * This sets the ClientIdentity object to use for information on the transaction invoking identity
+	 * MUST NOT BE CALLED FROM SMART CONTRACT CODE
+	 *
+	 * @param ClientIdentity clientIdentity chaincode stub instance
+	 */
+    public void setClientIdentity(ClientIdentity clientIdentity) {
+        this.clientIdentity = clientIdentity;
+    }
+
+    /**
+     *
+     * @return ClientIdentity object to use
+     */
+    public ClientIdentity getClientIdentity() {
+        return this.clientIdentity;
     }
 }
