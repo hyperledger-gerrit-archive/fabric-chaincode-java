@@ -18,31 +18,30 @@ import java.security.spec.InvalidKeySpecException;
 import java.util.List;
 import java.util.stream.Collectors;
 
-import com.github.dockerjava.api.exception.ConflictException;
-import com.google.protobuf.ByteString;
-
+import org.bouncycastle.crypto.CryptoException;
 import org.hamcrest.Matchers;
-import org.hyperledger.fabric.sdk.Channel;
+import org.hyperledger.fabric.protos.peer.ProposalResponsePackage.ProposalResponse;
+import org.hyperledger.fabric.sdk.ChaincodeResponse;
 import org.hyperledger.fabric.sdk.HFClient;
 import org.hyperledger.fabric.sdk.InstallProposalRequest;
 import org.hyperledger.fabric.sdk.InstantiateProposalRequest;
 import org.hyperledger.fabric.sdk.Peer;
-import org.hyperledger.fabric.sdk.ProposalResponse;
 import org.hyperledger.fabric.sdk.TransactionProposalRequest;
 import org.hyperledger.fabric.sdk.exception.ChaincodeCollectionConfigurationException;
 import org.hyperledger.fabric.sdk.exception.ChaincodeEndorsementPolicyParseException;
-import org.hyperledger.fabric.sdk.exception.CryptoException;
 import org.hyperledger.fabric.sdk.exception.InvalidArgumentException;
 import org.hyperledger.fabric.sdk.exception.ProposalException;
 import org.hyperledger.fabric.sdk.exception.TransactionException;
 import org.hyperledger.fabric.sdk.security.CryptoSuite;
-import org.hyperledger.fabric.shim.Chaincode;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.ClassRule;
 import org.junit.Ignore;
 import org.junit.Test;
 import org.testcontainers.containers.DockerComposeContainer;
+
+import com.github.dockerjava.api.exception.ConflictException;
+import com.google.protobuf.ByteString;
 
 public class FirstNetworkIntegrationTest {
 
@@ -338,7 +337,7 @@ public class FirstNetworkIntegrationTest {
                         .stream()
                         .filter(peer -> peer.getName().contains(peerName))
                         .collect(Collectors.toList()),
-                Matchers.is(Chaincode.Response.Status.SUCCESS.getCode()),
+                Matchers.is(ChaincodeResponse.Status.SUCCESS.getCode()),
                 Matchers.anything(),
                 Matchers.is(ByteString.copyFrom(expectedAmount, StandardCharsets.UTF_8))
         );
@@ -394,7 +393,7 @@ public class FirstNetworkIntegrationTest {
                         .stream()
                         .filter(peer -> peer.getName().contains(peerName))
                         .collect(Collectors.toList()),
-                Matchers.is(Chaincode.Response.Status.SUCCESS.getCode()),
+                Matchers.is(ChaincodeResponse.Status.SUCCESS.getCode()),
                 Matchers.anything(),
                 Matchers.is(ByteString.copyFrom(expectedAmount, StandardCharsets.UTF_8))
         );
