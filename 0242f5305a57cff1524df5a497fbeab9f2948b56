@@ -1,0 +1,8 @@
+Code-Review+1: James Taylor <jamest@uk.ibm.com>
+Verified+1: Hyperledger Jobbuilder <jobbuilder@jenkins.hyperledger.org>
+Code-Review+2: Matthew White <whitemat@uk.ibm.com>
+Submitted-by: Matthew White <whitemat@uk.ibm.com>
+Submitted-at: Wed, 31 Jul 2019 13:36:52 +0000
+Reviewed-on: https://gerrit.hyperledger.org/r/c/fabric-chaincode-java/+/32604
+Project: fabric-chaincode-java
+Branch: refs/heads/release-1.4
