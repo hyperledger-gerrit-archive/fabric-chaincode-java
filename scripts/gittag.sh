@@ -17,7 +17,13 @@ function abort {
 	exit -1
 }
 
-VERSION=$(jq '.version' ${DIR}/package.json | sed -r "s/\"([0-9]?[0-9]\.[0-9]?[0-9]\.[0-9]?[0-9]).*/\1/")
+# Check user has gradle installed
+if ! which gradle >> /dev/null; then
+	abort "gradle not installed, required for parsing the version";
+fi
+
+# Run printVersionName task in the root directory, grab the first line and remove anything after the version number
+VERSION=$(cd ../ && gradle -q printVersionName | gsed -n 1p | gsed -r "s/-.*//")
 
 echo New version string will be v${VERSION}
 
@@ -27,9 +33,6 @@ if [[ -f "${DIR}/release_notes/v${VERSION}.txt" ]]; then
 else
    abort "No releases notes under the file ${DIR}/release_notes/v${NEW_VERSION}.txt exist";
 fi
-
-
-
 
 git checkout "${RELEASE}"
 git pull
