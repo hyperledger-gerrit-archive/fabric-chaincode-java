@@ -130,7 +130,7 @@ public class SBECCIntegrationTest {
 
         r = coreBuilder.duplicate().argsTx(new String[] { "getval", mode }).build().run(true);
         text = filter(r.stderr);
-        assertThat(text, containsString("result: status:200 payload:\"foo\""));
+        assertThat(text, containsString("result: status:200"));
 
         r = coreBuilder.duplicate().argsTx(new String[] { "addorgs", mode, "Org1MSP" }).build().run(true);
         text = filter(r.stderr);
