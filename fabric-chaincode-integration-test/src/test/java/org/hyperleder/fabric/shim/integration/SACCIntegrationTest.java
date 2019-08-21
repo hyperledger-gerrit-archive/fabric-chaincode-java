@@ -27,7 +27,7 @@ public class SACCIntegrationTest {
     public static DockerComposeContainer env = new DockerComposeContainer(
             new File("src/test/resources/first-network/docker-compose-cli.yaml")
     )
-            .withLocalCompose(false)
+            .withLocalCompose(true)
             .withPull(true);
 
     @BeforeClass
