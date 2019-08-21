@@ -65,4 +65,8 @@ public class ChaincodeSupportStream {
         }
     }
 
+    public void sendChaincodeMessage(ChaincodeMessage msg){
+        this.requestObserver.onNext(msg);
+    }
+
 }

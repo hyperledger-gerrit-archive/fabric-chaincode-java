@@ -10,13 +10,23 @@ import java.io.Closeable;
 import java.util.HashSet;
 import java.util.concurrent.LinkedBlockingQueue;
 
+import org.hyperledger.fabric.metrics.Metrics;
+
 @SuppressWarnings("serial")
 public class Channel<E> extends LinkedBlockingQueue<E> implements Closeable {
 
     private boolean closed = false;
-
+    private String purpose = "unknown";
     private HashSet<Thread> waiting = new HashSet<>();
 
+    public Channel() {
+    	
+    }
+    
+    public Channel(String purpose) {
+    	this.purpose = purpose;
+    }
+    
     // TODO add other methods to secure closing behavior
 
     @Override
@@ -25,6 +35,7 @@ public class Channel<E> extends LinkedBlockingQueue<E> implements Closeable {
             if (closed) throw new InterruptedException("Channel closed");
             waiting.add(Thread.currentThread());
         }
+        //Metrics.getProvider().setChannelSize(purpose,super.size());
         E e = super.take();
         synchronized (waiting) {
             waiting.remove(Thread.currentThread());

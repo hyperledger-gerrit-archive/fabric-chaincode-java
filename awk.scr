@@ -1,0 +1,12 @@
+BEGIN { OFS = FS = "," }
+
+NR == 1 { lasttime = $3 }
+
+NR > 1 {
+
+	print $1,$2,$3, ($3-lasttime)
+	lastttime=$3
+}
+
+
+

@@ -17,36 +17,41 @@ import java.util.logging.LogManager;
  */
 public class Logger extends java.util.logging.Logger {
 
-    protected Logger(String name) {
-        super(name, null);
-
-        // ensure that the parent logger is set
-        this.setParent(java.util.logging.Logger.getLogger("org.hyperledger.fabric"));
-    }
-
-    public static Logger getLogger(String name) {
-        return new Logger(name);
-    }
-
-    public void debug(Supplier<String> msgSupplier) {
-        log(Level.FINEST, msgSupplier);
-    }
-
-    public void debug(String msg) {
-        log(Level.FINEST, msg);
-    }
-
     public static Logger getLogger(Class<?> class1) {
         // important to add the logger to the log manager
-        Logger l = Logger.getLogger(class1.getName());
-        LogManager.getLogManager().addLogger(l);
+        Logger l = new Logger(class1.getName());
         return l;
     }
+	
+    public static Logger getLogger(String name) {
+        // important to add the logger to the log manager
+        Logger l = new Logger(name);
+        return l;
+      }
+	
+    protected Logger(String name) {
+        super(name, null);
+        // ensure that the parent logger is set
+//        this.setParent(java.util.logging.Logger.getLogger("org.hyperledger.fabric"));
+        LogManager.getLogManager().addLogger(this);
+    }
 
+    @Deprecated
+    public void debug(Supplier<String> msgSupplier) {
+        log(Level.FINE, msgSupplier);
+    }
+
+    @Deprecated
+    public void debug(String msg) {
+        log(Level.FINE, msg);
+    }
+
+    @Deprecated
     public void error(String message) {
         log(Level.SEVERE, message);
     }
 
+    @Deprecated
     public void error(Supplier<String> msgSupplier) {
         log(Level.SEVERE, msgSupplier);
     }
@@ -65,6 +70,19 @@ public class Logger extends java.util.logging.Logger {
         }
 
         return buffer.toString();
+       
     }
+
+    @Deprecated
+	public void warn(String msg) {
+    	super.warning(msg);
+//		log(Level.WARNING, msg);
+	}
+	
+    @Deprecated
+	public void warn(Supplier<String> msgSupplier) {
+    	super.warning(msgSupplier);
+	}
+
 
 }

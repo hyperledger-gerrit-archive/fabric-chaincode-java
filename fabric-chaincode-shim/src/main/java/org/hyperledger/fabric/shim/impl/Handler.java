@@ -31,6 +31,7 @@ import java.io.StringWriter;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
@@ -67,14 +68,14 @@ public class Handler {
 
     private static Logger logger = Logger.getLogger(Handler.class.getName());
     private final Chaincode chaincode;
-    private final Map<String, Channel<ChaincodeMessage>> responseChannel = new HashMap<>();
-    private Channel<ChaincodeMessage> outboundChaincodeMessages = new Channel<>();
+    private final Map<String, Channel<ChaincodeMessage>> responseChannel = new ConcurrentHashMap<>();
+    private Channel<ChaincodeMessage> outboundChaincodeMessages = new Channel<>("outboundChaincodeMessages");
     private CCState state;
 
     public Handler(ChaincodeID chaincodeId, Chaincode chaincode) {
         this.chaincode = chaincode;
         this.state = CCState.CREATED;
-        queueOutboundChaincodeMessage(newRegisterChaincodeMessage(chaincodeId));
+        queueOutboundChaincodeMessage(ChaincodeMessageFactory.newRegisterChaincodeMessage(chaincodeId));
     }
 
     public ChaincodeMessage nextOutboundChaincodeMessage() {
@@ -85,7 +86,7 @@ public class Handler {
             if (logger.isLoggable(Level.WARNING)) {
                 logger.warning("Unable to get next outbound ChaincodeMessage");
             }
-            return newErrorEventMessage("UNKNOWN", "UNKNOWN", e);
+            return ChaincodeMessageFactory.newErrorEventMessage("UNKNOWN", "UNKNOWN", e);
         }
     }
 
@@ -96,7 +97,7 @@ public class Handler {
         handleChaincodeMessage(chaincodeMessage);
     }
 
-    private synchronized void handleChaincodeMessage(ChaincodeMessage message) {
+    private void handleChaincodeMessage(ChaincodeMessage message) {
         if (logger.isLoggable(Level.FINE)) {
             logger.fine(format("[%-8.8s] Handling ChaincodeMessage of type: %s, handler state %s", message.getTxid(), message.getType(), this.state));
         }
@@ -192,9 +193,10 @@ public class Handler {
         this.outboundChaincodeMessages.add(chaincodeMessage);
     }
 
-    private synchronized Channel<ChaincodeMessage> aquireResponseChannelForTx(final String channelId, final String txId) {
+    private Channel<ChaincodeMessage> aquireResponseChannelForTx(final String channelId, final String txId) {
+    	String key = getTxKey(channelId, txId);
         final Channel<ChaincodeMessage> channel = new Channel<>();
-        String key = getTxKey(channelId, txId);
+        
         if (this.responseChannel.putIfAbsent(key, channel) != null) {
             throw new IllegalStateException(format("[%-8.8s] Response channel already exists. Another request must be pending.", txId));
         }
@@ -204,7 +206,7 @@ public class Handler {
         return channel;
     }
 
-    private synchronized void sendChannel(ChaincodeMessage message) {
+    private void sendChannel(ChaincodeMessage message) {
         String key = getTxKey(message.getChannelId(), message.getTxid());
         if (!responseChannel.containsKey(key)) {
             throw new IllegalStateException(format("[%-8.8s] sendChannel does not exist", message.getTxid()));
@@ -226,7 +228,7 @@ public class Handler {
         }
     }
 
-    private synchronized void releaseResponseChannelForTx(String channelId, String txId) {
+    private void releaseResponseChannelForTx(String channelId, String txId) {
         String key = getTxKey(channelId, txId);
         final Channel<ChaincodeMessage> channel = responseChannel.remove(key);
         if (channel != null) channel.close();
@@ -257,17 +259,17 @@ public class Handler {
                 if (result.getStatus().getCode() >= Chaincode.Response.Status.INTERNAL_SERVER_ERROR.getCode()) {
                     // Send ERROR with entire result.Message as payload
                     logger.severe(format("[%-8.8s] Init failed. Sending %s", message.getTxid(), ERROR));
-                    queueOutboundChaincodeMessage(newErrorEventMessage(message.getChannelId(), message.getTxid(), result.getMessage(), stub.getEvent()));
+                    queueOutboundChaincodeMessage(ChaincodeMessageFactory.newErrorEventMessage(message.getChannelId(), message.getTxid(), result.getMessage(), stub.getEvent()));
                 } else {
                     // Send COMPLETED with entire result as payload
                     if (logger.isLoggable(Level.FINE)) {
                         logger.fine(format(format("[%-8.8s] Init succeeded. Sending %s", message.getTxid(), COMPLETED)));
                     }
-                    queueOutboundChaincodeMessage(newCompletedEventMessage(message.getChannelId(), message.getTxid(), result, stub.getEvent()));
+                    queueOutboundChaincodeMessage(ChaincodeMessageFactory.newCompletedEventMessage(message.getChannelId(), message.getTxid(), result, stub.getEvent()));
                 }
             } catch (InvalidProtocolBufferException | RuntimeException e) {
                 logger.severe(format("[%-8.8s] Init failed. Sending %s: %s", message.getTxid(), ERROR, e));
-                queueOutboundChaincodeMessage(newErrorEventMessage(message.getChannelId(), message.getTxid(), e));
+                queueOutboundChaincodeMessage(ChaincodeMessageFactory.newErrorEventMessage(message.getChannelId(), message.getTxid(), e));
             }
         }).start();
     }
@@ -290,33 +292,33 @@ public class Handler {
                 if (result.getStatus().getCode() >= Chaincode.Response.Status.INTERNAL_SERVER_ERROR.getCode()) {
                     // Send ERROR with entire result.Message as payload
                     logger.severe(format("[%-8.8s] Invoke failed. Sending %s", message.getTxid(), ERROR));
-                    queueOutboundChaincodeMessage(newErrorEventMessage(message.getChannelId(), message.getTxid(), result.getMessage(), stub.getEvent()));
+                    queueOutboundChaincodeMessage(ChaincodeMessageFactory.newErrorEventMessage(message.getChannelId(), message.getTxid(), result.getMessage(), stub.getEvent()));
                 } else {
                     // Send COMPLETED with entire result as payload
                     if (logger.isLoggable(Level.FINE)) {
                         logger.fine(format(format("[%-8.8s] Invoke succeeded. Sending %s", message.getTxid(), COMPLETED)));
                     }
-                    queueOutboundChaincodeMessage(newCompletedEventMessage(message.getChannelId(), message.getTxid(), result, stub.getEvent()));
+                    queueOutboundChaincodeMessage(ChaincodeMessageFactory.newCompletedEventMessage(message.getChannelId(), message.getTxid(), result, stub.getEvent()));
                 }
 
             } catch (InvalidProtocolBufferException | RuntimeException e) {
                 logger.severe(format("[%-8.8s] Invoke failed. Sending %s: %s", message.getTxid(), ERROR, e));
-                queueOutboundChaincodeMessage(newErrorEventMessage(message.getChannelId(), message.getTxid(), e));
+                queueOutboundChaincodeMessage(ChaincodeMessageFactory.newErrorEventMessage(message.getChannelId(), message.getTxid(), e));
             }
         }).start();
     }
 
     // handleGetState communicates with the validator to fetch the requested state information from the ledger.
     ByteString getState(String channelId, String txId, String collection, String key) {
-        return invokeChaincodeSupport(newGetStateEventMessage(channelId, txId, collection, key));
+        return invokeChaincodeSupport(ChaincodeMessageFactory.newGetStateEventMessage(channelId, txId, collection, key));
     }
 
     ByteString getPrivateDataHash(String channelId, String txId, String collection, String key) {
-        return invokeChaincodeSupport(newGetPrivateDataHashEventMessage(channelId, txId, collection, key));
+        return invokeChaincodeSupport(ChaincodeMessageFactory.newGetPrivateDataHashEventMessage(channelId, txId, collection, key));
     }
 
     Map<String, ByteString> getStateMetadata(String channelId, String txId, String collection, String key) {
-        ByteString payload = invokeChaincodeSupport(newGetStateMetadataEventMessage(channelId, txId, collection, key));
+        ByteString payload = invokeChaincodeSupport(ChaincodeMessageFactory.newGetStateMetadataEventMessage(channelId, txId, collection, key));
         try {
             StateMetadataResult stateMetadataResult = StateMetadataResult.parseFrom(payload);
             Map<String, ByteString> stateMetadataMap = new HashMap<>();
@@ -332,15 +334,15 @@ public class Handler {
         if (logger.isLoggable(Level.FINE)) {
             logger.fine(format("[%-8.8s] Inside putstate (\"%s\":\"%s\":\"%s\")", txId, collection, key, value));
         }
-        invokeChaincodeSupport(newPutStateEventMessage(channelId, txId, collection, key, value));
+        invokeChaincodeSupport(ChaincodeMessageFactory.newPutStateEventMessage(channelId, txId, collection, key, value));
     }
 
     void putStateMetadata(String channelId, String txId, String collection, String key, String metakey, ByteString value) {
-        invokeChaincodeSupport(newPutStateMatadateEventMessage(channelId, txId, collection, key, metakey, value));
+        invokeChaincodeSupport(ChaincodeMessageFactory.newPutStateMatadateEventMessage(channelId, txId, collection, key, metakey, value));
     }
 
     void deleteState(String channelId, String txId, String collection, String key) {
-        invokeChaincodeSupport(newDeleteStateEventMessage(channelId, txId, collection, key));
+        invokeChaincodeSupport(ChaincodeMessageFactory.newDeleteStateEventMessage(channelId, txId, collection, key));
     }
 
     QueryResponse getStateByRange(String channelId, String txId, String collection, String startKey, String endKey, ByteString metadata) {
@@ -384,14 +386,14 @@ public class Handler {
 
     private QueryResponse invokeQueryResponseMessage(String channelId, String txId, ChaincodeMessage.Type type, ByteString payload) {
         try {
-            return QueryResponse.parseFrom(invokeChaincodeSupport(newEventMessage(type, channelId, txId, payload)));
+            return QueryResponse.parseFrom(invokeChaincodeSupport(ChaincodeMessageFactory.newEventMessage(type, channelId, txId, payload)));
         } catch (InvalidProtocolBufferException e) {
             logger.severe(String.format("[%-8.8s] unmarshall error", txId));
             throw new RuntimeException("Error unmarshalling QueryResponse.", e);
         }
     }
 
-    private ByteString invokeChaincodeSupport(final ChaincodeMessage message) {
+    protected ByteString invokeChaincodeSupport(final ChaincodeMessage message) {
         final String channelId = message.getChannelId();
         final String txId = message.getTxid();
 
@@ -440,7 +442,7 @@ public class Handler {
                     .build();
 
             // invoke other chaincode
-            final ByteString payload = invokeChaincodeSupport(newInvokeChaincodeMessage(channelId, txId, invocationSpec.toByteString()));
+            final ByteString payload = invokeChaincodeSupport(ChaincodeMessageFactory.newInvokeChaincodeMessage(channelId, txId, invocationSpec.toByteString()));
 
             // response message payload should be yet another chaincode
             // message (the actual response message)
@@ -473,110 +475,7 @@ public class Handler {
         return new Chaincode.Response(Chaincode.Response.Status.INTERNAL_SERVER_ERROR, message, null);
     }
 
-    private static ChaincodeMessage newGetPrivateDataHashEventMessage(final String channelId, final String txId, final String collection, final String key) {
-        return newEventMessage(GET_PRIVATE_DATA_HASH, channelId, txId, GetState.newBuilder()
-                .setCollection(collection)
-                .setKey(key)
-                .build().toByteString());
-    }
 
-    private static ChaincodeMessage newGetStateEventMessage(final String channelId, final String txId, final String collection, final String key) {
-        return newEventMessage(GET_STATE, channelId, txId, GetState.newBuilder()
-                .setCollection(collection)
-                .setKey(key)
-                .build().toByteString());
-    }
-
-    private static ChaincodeMessage newGetStateMetadataEventMessage(final String channelId, final String txId, final String collection, final String key) {
-        return newEventMessage(GET_STATE_METADATA, channelId, txId,
-                GetStateMetadata.newBuilder()
-                .setCollection(collection)
-                .setKey(key)
-                .build().toByteString());
-    }
-
-    private static ChaincodeMessage newPutStateEventMessage(final String channelId, final String txId, final String collection, final String key, final ByteString value) {
-        return newEventMessage(PUT_STATE, channelId, txId, PutState.newBuilder()
-                .setCollection(collection)
-                .setKey(key)
-                .setValue(value)
-                .build().toByteString());
-    }
-
-    private static ChaincodeMessage newPutStateMatadateEventMessage(final String channelId, final String txId, final String collection, final String key, final String metakey, final ByteString value) {
-        return newEventMessage(PUT_STATE_METADATA, channelId, txId,
-                PutStateMetadata.newBuilder()
-                        .setCollection(collection)
-                        .setKey(key)
-                        .setMetadata(StateMetadata.newBuilder()
-                                .setMetakey(metakey)
-                                .setValue(value)
-                                .build())
-                        .build().toByteString());
-    }
-
-    private static ChaincodeMessage newDeleteStateEventMessage(final String channelId, final String txId, final String collection, final String key) {
-        return newEventMessage(DEL_STATE, channelId, txId, DelState.newBuilder()
-                .setCollection(collection)
-                .setKey(key)
-                .build().toByteString());
-    }
-
-    private static ChaincodeMessage newErrorEventMessage(final String channelId, final String txId, final Throwable throwable) {
-        return newErrorEventMessage(channelId, txId, printStackTrace(throwable));
-    }
-
-    private static ChaincodeMessage newErrorEventMessage(final String channelId, final String txId, final String message) {
-        return newErrorEventMessage(channelId, txId, message, null);
-    }
-
-    private static ChaincodeMessage newErrorEventMessage(final String channelId, final String txId, final String message, final ChaincodeEvent event) {
-        return newEventMessage(ERROR, channelId, txId, ByteString.copyFromUtf8(message), event);
-    }
-
-    private static ChaincodeMessage newCompletedEventMessage(final String channelId, final String txId, final Chaincode.Response response, final ChaincodeEvent event) {
-        ChaincodeMessage message = newEventMessage(COMPLETED, channelId, txId, toProtoResponse(response).toByteString(), event);
-        return message;
-    }
-
-    private static ChaincodeMessage newInvokeChaincodeMessage(final String channelId, final String txId, final ByteString payload) {
-        return newEventMessage(INVOKE_CHAINCODE, channelId, txId, payload, null);
-    }
-
-    private static ChaincodeMessage newRegisterChaincodeMessage(final ChaincodeID chaincodeId) {
-        return ChaincodeMessage.newBuilder()
-                .setType(REGISTER)
-                .setPayload(chaincodeId.toByteString())
-                .build();
-    }
-
-    private static ChaincodeMessage newEventMessage(final Type type, final String channelId, final String txId, final ByteString payload) {
-        return newEventMessage(type, channelId, txId, payload, null);
-    }
-
-    private static ChaincodeMessage newEventMessage(final Type type, final String channelId, final String txId, final ByteString payload, final ChaincodeEvent event) {
-        ChaincodeMessage.Builder builder = ChaincodeMessage.newBuilder()
-                .setType(type)
-                .setChannelId(channelId)
-                .setTxid(txId)
-                .setPayload(payload);
-        if (event != null) {
-            builder.setChaincodeEvent(event);
-        }
-        return builder.build();
-    }
-
-    private static Response toProtoResponse(Chaincode.Response response) {
-        final Builder builder = Response.newBuilder();
-        builder.setStatus(response.getStatus().getCode());
-        if (response.getMessage() != null) {
-            builder.setMessage(response.getMessage());
-        }
-        if (response.getPayload() != null) {
-            builder.setPayload(ByteString.copyFrom(response.getPayload()));
-        }
-        return builder.build();
-    }
 
     private static Chaincode.Response toChaincodeResponse(Response response) {
         return new Chaincode.Response(
@@ -586,12 +485,7 @@ public class Handler {
         );
     }
 
-    private static String printStackTrace(Throwable throwable) {
-        if (throwable == null) return null;
-        final StringWriter buffer = new StringWriter();
-        throwable.printStackTrace(new PrintWriter(buffer));
-        return buffer.toString();
-    }
+
 
     public enum CCState {
         CREATED,
