@@ -39,7 +39,7 @@ public class ContractDefinitionImpl implements ContractDefinition {
     public ContractDefinitionImpl(Class<? extends ContractInterface> cl) {
 
         Contract annotation = cl.getAnnotation(Contract.class);
-        logger.debug(() -> "Class Contract Annotation: " + annotation);
+        logger.fine(() -> "Class Contract Annotation: " + annotation);
 
         String annotationName = annotation.name();
 
@@ -59,12 +59,12 @@ public class ContractDefinitionImpl implements ContractDefinition {
             unknownTx.setUnknownTx(true);
         } catch (NoSuchMethodException | SecurityException e) {
             ContractRuntimeException cre = new ContractRuntimeException("Failure to find unknownTransaction method", e);
-            logger.severe(() -> logger.formatError(cre));
+            logger.severe(() -> Logger.formatError(cre));
             throw cre;
         }
 
         logger.info(() -> "Found class: " + cl.getCanonicalName());
-        logger.debug(() -> "Namespace: " + this.name);
+        logger.fine(() -> "Namespace: " + this.name);
     }
 
     @Override
@@ -84,13 +84,13 @@ public class ContractDefinitionImpl implements ContractDefinition {
 
     @Override
     public TxFunction addTxFunction(Method m) {
-        logger.debug(() -> "Adding method " + m.getName());
+        logger.fine(() -> "Adding method " + m.getName());
         TxFunction txFn = new TxFunctionImpl(m, this);
         TxFunction previousTxnFn = txFunctions.put(txFn.getName(), txFn);
         if (previousTxnFn != null) {
             String message = String.format("Duplicate transaction method %s", previousTxnFn.getName());
             ContractRuntimeException cre = new ContractRuntimeException(message);
-            logger.severe(() -> logger.formatError(cre));
+            logger.severe(() -> Logger.formatError(cre));
             throw cre;
         }
         return txFn;

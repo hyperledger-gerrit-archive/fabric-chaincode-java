@@ -192,7 +192,7 @@ public class TypeSchema extends HashMap<String, Object> {
 
         JSONObject schemaJSON;
         if (this.containsKey("schema")) {
-            schemaJSON = new JSONObject((Map) this.get("schema"));
+            schemaJSON = new JSONObject((Map<?, ?>) this.get("schema"));
         } else {
             schemaJSON = new JSONObject(this);
         }

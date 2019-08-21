@@ -48,7 +48,7 @@ public class ResponseUtils {
 
     public static Chaincode.Response newErrorResponse(Throwable throwable) {
         // Responses should not include internals like stack trace but make sure it gets logged
-        logger.error(() -> logger.formatError(throwable));
+        logger.severe(() -> Logger.formatError(throwable));
 
         String message = null;
         byte[] payload = null;
