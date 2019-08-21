@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<metadata modelVersion="1.1.0">
+  <groupId>org.hyperledger.fabric-chaincode-java</groupId>
+  <artifactId>fabric-chaincode-shim</artifactId>
+  <version>1.4.4-SNAPSHOT</version>
+  <versioning>
+    <snapshot>
+      <timestamp>20191021.155628</timestamp>
+      <buildNumber>4</buildNumber>
+    </snapshot>
+    <lastUpdated>20191021155628</lastUpdated>
+    <snapshotVersions>
+      <snapshotVersion>
+        <extension>jar</extension>
+        <value>1.4.4-20191021.155628-4</value>
+        <updated>20191021155628</updated>
+      </snapshotVersion>
+      <snapshotVersion>
+        <extension>pom</extension>
+        <value>1.4.4-20191021.155628-4</value>
+        <updated>20191021155628</updated>
+      </snapshotVersion>
+    </snapshotVersions>
+  </versioning>
+</metadata>
