@@ -7,7 +7,6 @@ package org.hyperledger.fabric;
 
 import java.io.PrintWriter;
 import java.io.StringWriter;
-import java.util.logging.Logger;
 
 /**
  * Logger class to use throughout the Contract Implementation
