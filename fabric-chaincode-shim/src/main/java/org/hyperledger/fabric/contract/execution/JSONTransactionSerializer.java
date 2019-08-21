@@ -48,7 +48,7 @@ public class JSONTransactionSerializer {
      * @return  Byte buffer
      */
     public byte[] toBuffer(Object value, TypeSchema ts) {
-        logger.debug(() -> "Schema to convert is " + ts);
+        logger.fine(() -> "Schema to convert is " + ts);
         byte[] buffer = null;
         if (value != null) {
             String type = ts.getType();
@@ -105,7 +105,7 @@ public class JSONTransactionSerializer {
      */
     private Object _convert(String stringData, TypeSchema ts)
             throws IllegalArgumentException, IllegalAccessException, InstantiationException {
-        logger.debug(() -> "Schema to convert is " + ts);
+        logger.fine(() -> "Schema to convert is " + ts);
         String type = ts.getType();
         String format = null;
         Object value = null;

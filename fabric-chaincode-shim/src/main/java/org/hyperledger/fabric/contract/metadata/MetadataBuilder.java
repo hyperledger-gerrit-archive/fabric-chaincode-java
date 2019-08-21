@@ -90,9 +90,9 @@ public class MetadataBuilder {
         } catch (IOException e) {
             throw new RuntimeException(e);
         } catch (ValidationException e) {
-            logger.error(e.getMessage());
+            logger.severe(Logger.formatError(e));
             e.getCausingExceptions().stream().map(ValidationException::getMessage).forEach(logger::info);
-            logger.error(debugString());
+            logger.severe(debugString());
             throw e;
         }
 
