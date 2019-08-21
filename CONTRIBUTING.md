@@ -58,6 +58,13 @@ dependencies {
 }
 ```
 
+## Cheatsheet
+
+* `./gradlew :fabric-chaincode-shim:classes :fabric-chaincode-shim:test`
+  Compile and test the core Java code only
+  
+
+
 ## Code of Conduct Guidelines <a name="conduct"></a>
 
 See our [Code of Conduct Guidelines](../blob/master/CODE_OF_CONDUCT.md).
