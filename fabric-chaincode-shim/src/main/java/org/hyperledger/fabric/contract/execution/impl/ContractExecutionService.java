@@ -42,7 +42,7 @@ public class ContractExecutionService implements ExecutionService {
 
     @Override
     public Chaincode.Response executeRequest(TxFunction txFn, InvocationRequest req, ChaincodeStub stub) {
-        logger.debug(() -> "Routing Request" + txFn);
+        logger.fine(() -> "Routing Request" + txFn);
         TxFunction.Routing rd = txFn.getRouting();
         Chaincode.Response response;
 

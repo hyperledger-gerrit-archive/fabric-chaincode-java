@@ -117,7 +117,7 @@ public final class ClientIdentity {
         } catch (JSONException error) {
             // creating a JSON object failed
             // decoded extensionValue is not a string containing JSON
-            logger.error(() -> logger.formatError(error));
+            logger.severe(() -> Logger.formatError(error));
             // return empty map
         }
         return attrMap;

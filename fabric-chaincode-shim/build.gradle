@@ -25,6 +25,15 @@ dependencies {
     implementation 'com.github.everit-org.json-schema:org.everit.json.schema:1.11.1'
     compile 'io.swagger.core.v3:swagger-annotations:2.0.0'
     implementation group: 'org.json', name: 'json', version: '20180813'
+
+    // https://mvnrepository.com/artifact/io.prometheus/simpleclient
+    compile group: 'io.prometheus', name: 'simpleclient', version: '0.6.0'
+    // https://mvnrepository.com/artifact/io.prometheus/simpleclient
+    compile group: 'io.prometheus', name: 'simpleclient', version: '0.6.0'
+    // https://mvnrepository.com/artifact/io.prometheus/simpleclient_pushgateway
+    compile group: 'io.prometheus', name: 'simpleclient_pushgateway', version: '0.6.0'
+    // https://mvnrepository.com/artifact/io.prometheus/simpleclient_hotspot
+    compile group: 'io.prometheus', name: 'simpleclient_hotspot', version: '0.6.0'
 }
 
 sourceSets {
