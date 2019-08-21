@@ -1,6 +1,6 @@
 dependencies {
-    compile project(':fabric-chaincode-docker')
     testCompile 'org.testcontainers:testcontainers:1.7.1'
+<<<<<<< HEAD
     testCompile 'org.hyperledger.fabric-sdk-java:fabric-sdk-java:1.4.1'
     compile project(':fabric-chaincode-shim')
     implementation group: 'org.json', name: 'json', version: '20180813'
@@ -22,3 +22,9 @@ build.dependsOn project(':fabric-chaincode-docker').buildImage
         
     }
  }
+=======
+    testCompile 'org.hyperledger.fabric-sdk-java:fabric-sdk-java:1.4.4'
+}
+
+build.dependsOn project(':fabric-chaincode-docker').buildImage
+>>>>>>> [FAB-16315] Improved Load Ability
