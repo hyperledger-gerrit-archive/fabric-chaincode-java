@@ -110,7 +110,7 @@ public class SimpleChaincode extends ChaincodeBase {
 		return newSuccessResponse();
 	}
 
-	// query callback representing the query of a chaincode
+	// query all callback representing the query of a chaincode
 	private Response query(ChaincodeStub stub, List<String> args) {
 		if (args.size() != 1) {
 			return newErrorResponse("Incorrect number of arguments. Expecting name of the person to query");
