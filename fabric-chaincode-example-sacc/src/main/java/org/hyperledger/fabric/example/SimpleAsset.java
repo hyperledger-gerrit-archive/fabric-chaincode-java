@@ -49,6 +49,7 @@ public class SimpleAsset extends ChaincodeBase {
             // Extract the function and args from the transaction proposal
             String func = stub.getFunction();
             List<String> params = stub.getParameters();
+            System.out.println("Function ="+func+" params ="+params);
             if (func.equals("set")) {
                 // Return result as success payload
                 return newSuccessResponse(set(stub, params));

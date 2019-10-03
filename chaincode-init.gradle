@@ -1,0 +1,32 @@
+/*
+ * This gradle init script can be used to publish jars to a repository folder
+ * inside a Fabric contract project. For example, in the `fabric-chaincode-java` project:
+ *
+ *   ./gradlew -I ~/chaincode-init.gradle -PchaincodeRepoDir=<chaincode_dir>/repository publishShimJarPublicationToFabricRepository publishProtosJarPublicationToFabricRepository
+ *
+ * Where <chaincode_dir> is the chaincode location containing your contract!
+ *
+ * Fabric contract projects can then use jars from the bundled maven repository
+ * during the Fabric instantiation process by adding the following repository
+ * to their build.gradle file:
+ *
+ *   maven {
+ *     url "$projectDir/repository"
+ *   }
+ *
+ * Note: this should be placed before other repositories which might contain
+ *       the jars you published
+ *
+ */
+allprojects {
+    apply plugin: 'maven-publish'
+
+    publishing {
+        repositories {
+            maven {
+                name = 'fabric'
+                url = "file:$chaincodeRepoDir"
+            }
+        }
+    }
+}
