@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<metadata>
+  <groupId>org.hyperledger.fabric-chaincode-java</groupId>
+  <artifactId>fabric-chaincode-protos</artifactId>
+  <versioning>
+    <versions>
+      <version>1.4.4-SNAPSHOT</version>
+    </versions>
+    <lastUpdated>20190930102114</lastUpdated>
+  </versioning>
+</metadata>
