@@ -42,3 +42,7 @@ gradle.properties
 ### Jekyll ###
 .sass-cache
 _site
+# The local repos for the chaincode
+
+fabric-chaincode-example-sacc/repository
+fabric-chaincode-example-sbe/repository
