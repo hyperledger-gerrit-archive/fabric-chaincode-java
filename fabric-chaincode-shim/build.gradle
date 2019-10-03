@@ -51,6 +51,16 @@ publishing {
             artifactId 'fabric-chaincode-shim'
         }
     }
+    repositories {
+        maven {
+             name = 'fabric'
+             url = "file:fabric-chaincode-example-sbe/repository"
+        }
+        maven {
+             name = 'fabric'
+             url = "file:fabric-chaincode-example-sacc/repository"
+        }
+    }
 }
 
 jacoco {
