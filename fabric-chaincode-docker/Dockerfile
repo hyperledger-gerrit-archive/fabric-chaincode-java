@@ -40,12 +40,6 @@ RUN source /root/.sdkman/bin/sdkman-init.sh; gradle clean build install publishT
 WORKDIR /root/chaincode-java/shim-src/fabric-chaincode-shim/build/publications/shimJar/
 RUN source /root/.sdkman/bin/sdkman-init.sh; mvn -f pom-default.xml compile
 
-# Sanity check and maven/gradle plugin installs - compiling sample chaincode - gradle and maven
-WORKDIR /root/chaincode-java/example-src/fabric-chaincode-example-gradle
-RUN source /root/.sdkman/bin/sdkman-init.sh; gradle build shadowJar
-WORKDIR /root/chaincode-java/example-src/fabric-chaincode-example-maven
-RUN source /root/.sdkman/bin/sdkman-init.sh; mvn compile package
-
 # Adding shim 1.3.0 jar
 WORKDIR /tmp
 RUN wget https://nexus.hyperledger.org/content/repositories/releases/org/hyperledger/fabric-chaincode-java/fabric-chaincode-shim/1.3.0/fabric-chaincode-shim-1.3.0.pom
@@ -57,5 +51,4 @@ RUN source /root/.sdkman/bin/sdkman-init.sh; mvn install::install-file -Dfile=fa
 
 #Removing non-needed sources
 WORKDIR /root/chaincode-java
-RUN rm -rf example-src/*
 RUN rm -rf shim-src
