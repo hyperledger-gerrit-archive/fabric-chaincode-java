@@ -13,8 +13,8 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.logging.Logger;
 
-import org.hyperledger.fabric.Logger;
 import org.hyperledger.fabric.contract.ContractInterface;
 import org.hyperledger.fabric.contract.ContractRuntimeException;
 import org.hyperledger.fabric.contract.annotation.Contract;
@@ -40,9 +40,9 @@ import io.github.classgraph.ScanResult;
  *
  */
 public class RoutingRegistryImpl implements RoutingRegistry {
-    private static Logger logger = Logger.getLogger(RoutingRegistryImpl.class);
+    private static Logger logger = Logger.getLogger(RoutingRegistryImpl.class.getName());
 
-    private Map<String, ContractDefinition> contracts = new HashMap<>();
+    private final Map<String, ContractDefinition> contracts = new HashMap<>();
 
     /*
      * (non-Javadoc)
@@ -52,8 +52,8 @@ public class RoutingRegistryImpl implements RoutingRegistry {
      * lang.Class)
      */
     @Override
-    public ContractDefinition addNewContract(Class<ContractInterface> clz) {
-        logger.debug(() -> "Adding new Contract Class " + clz.getCanonicalName());
+    public ContractDefinition addNewContract(final Class<ContractInterface> clz) {
+        logger.fine(() -> "Adding new Contract Class " + clz.getCanonicalName());
         ContractDefinition contract;
         contract = new ContractDefinitionImpl(clz);
 
@@ -63,7 +63,7 @@ public class RoutingRegistryImpl implements RoutingRegistry {
             contracts.put(InvocationRequest.DEFAULT_NAMESPACE, contract);
         }
 
-        logger.debug(() -> "Put new contract in under name " + contract.getName());
+        logger.fine(() -> "Put new contract in under name " + contract.getName());
         return contract;
     }
 
@@ -75,9 +75,9 @@ public class RoutingRegistryImpl implements RoutingRegistry {
      * hyperledger.fabric.contract.execution.InvocationRequest)
      */
     @Override
-    public boolean containsRoute(InvocationRequest request) {
+    public boolean containsRoute(final InvocationRequest request) {
         if (contracts.containsKey(request.getNamespace())) {
-            ContractDefinition cd = contracts.get(request.getNamespace());
+            final ContractDefinition cd = contracts.get(request.getNamespace());
 
             if (cd.hasTxFunction(request.getMethod())) {
                 return true;
@@ -93,14 +93,14 @@ public class RoutingRegistryImpl implements RoutingRegistry {
      * hyperledger.fabric.contract.execution.InvocationRequest)
      */
     @Override
-    public TxFunction.Routing getRoute(InvocationRequest request) {
-        TxFunction txFunction = contracts.get(request.getNamespace()).getTxFunction(request.getMethod());
+    public TxFunction.Routing getRoute(final InvocationRequest request) {
+        final TxFunction txFunction = contracts.get(request.getNamespace()).getTxFunction(request.getMethod());
         return txFunction.getRouting();
     }
 
     @Override
-    public TxFunction getTxFn(InvocationRequest request) {
-        TxFunction txFunction = contracts.get(request.getNamespace()).getTxFunction(request.getMethod());
+    public TxFunction getTxFn(final InvocationRequest request) {
+        final TxFunction txFunction = contracts.get(request.getNamespace()).getTxFunction(request.getMethod());
         return txFunction;
     }
 
@@ -112,8 +112,8 @@ public class RoutingRegistryImpl implements RoutingRegistry {
      * .String)
      */
     @Override
-    public ContractDefinition getContract(String namespace) {
-        ContractDefinition contract = contracts.get(namespace);
+    public ContractDefinition getContract(final String namespace) {
+        final ContractDefinition contract = contracts.get(namespace);
 
         if (contract == null) {
             throw new ContractRuntimeException("Undefined contract called");
@@ -140,6 +140,7 @@ public class RoutingRegistryImpl implements RoutingRegistry {
      * @see
      * org.hyperledger.fabric.contract.routing.RoutingRegistry#findAndSetContracts()
      */
+    @SuppressWarnings("unchecked")
     @Override
     @SuppressWarnings("unchecked")
     public void findAndSetContracts(TypeRegistry typeRegistry) {
@@ -192,7 +193,7 @@ public class RoutingRegistryImpl implements RoutingRegistry {
         }
 
         // set to ensure that we don't scan the same class twice
-        Set<String> seenClass = new HashSet<>();
+        final Set<String> seenClass = new HashSet<>();
 
         // loop over all the classes that have the Contract annotation
         for (Class<ContractInterface> contractClass : contractClasses) {

@@ -15,8 +15,13 @@ LANGUAGE="$3"
 TIMEOUT="$4"
 VERBOSE="$5"
 : ${CHANNEL_NAME:="mychannel"}
+<<<<<<< HEAD
 : ${DELAY:="3"}
 : ${LANGUAGE:="golang"}
+=======
+: ${DELAY:="10"}
+: ${LANGUAGE:="java"}
+>>>>>>> a4938e8... [FAB-16845] Correct Logging
 : ${TIMEOUT:="10"}
 : ${VERBOSE:="false"}
 LANGUAGE=`echo "$LANGUAGE" | tr [:upper:] [:lower:]`
