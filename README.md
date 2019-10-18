@@ -1,19 +1,35 @@
-# Hyperledger Fabric - Java Contract and Chaincode
+# Hyperledger Fabric - Java Contracts
 
-This is a Java implementation of Hyperledger Fabric chaincode shim APIs and contract programming model.  This enables development of using Java language or other JVM based languages
+This is the project to support the writing of Contracts with the JVM runtime - enabling development of using Java language or other JVM based languages
 
 ## Developers
 
-Application developers interested in developing smart contracts should read the [introductory tutorial](CONTRACT_TUTORIAL.md) and for a full scenario visit the
-[Commercial Paper](https://hyperledger-fabric.readthedocs.io/en/latest/tutorial/commercial_paper.html) tutorial.
+As an application developer, to learn about how to implement **"Smart Contracts"** for Hyperledger Fabric using Java, please visit the [API documentation](https://fabric-chaincode-java.github.io/) - and follow the tutorial links. A [quick-start tutorial](TUTORIAL.md) is in this repo.
 
-We recommend using the IBM Blockchain Platform [VSCode extension](https://marketplace.visualstudio.com/items?itemName=IBMBlockchain.ibm-blockchain-platform) to assist you in developing smart contracts. The extension is able to create sample contracts for you, an example of such a contract is in the [fabric-contract-example](./fabric-contract-example) directory; there are folders for using both gradle and maven.
+As a contributor looking to update this repo, please start with the [contributing guide](CONTRIBUTING.md)
 
-In addition, this has reference to other tutorials to get you started
+## Artifacts published from this repo
 
-## Contributors
+All the interfaces are in the single Java dependency
 
-Contributors or early adopters who need to be able to build and test recent builds, should reference the [contributing](CONTRIBUTING.md) guide.
+- Java Libraries
+    - [fabric-chaincode-shim](https://mvnrepository.com/artifact/org.hyperledger.fabric-chaincode-java/fabric-chaincode-shim)
+- docker images
+    - [fabric-javaenv](https://hub.docker.com/r/hyperledger/fabric-javaenv)
+- api documentation
+    - [API docs](https://fabric-chaincode-java.github.io/)    
 
-This project creates `fabric-chaincode-protos` and `fabric-chaincode-shim` jar files for developers consumption and the `hyperledger/fabric-javaenv` docker image to run the Java chaincode and contracts.
+## Where to go from here?
 
+- [API documentation](https://fabric-chaincode-java.github.io/)
+- [Full Documenation on Hyperledger Fabric](https://hyperledger-fabric.readthedocs.io/en/release-1.4/)
+- [Samples repository](https://github.com/hyperledger/fabric-samples)
+
+---
+
+## License <a name="license"></a>
+
+Hyperledger Project source code files are made available under the Apache
+License, Version 2.0 (Apache-2.0), located in the [LICENSE](LICENSE) file.
+Hyperledger Project documentation files are made available under the Creative
+Commons Attribution 4.0 International License (CC-BY-4.0), available at http://creativecommons.org/licenses/by/4.0/.
