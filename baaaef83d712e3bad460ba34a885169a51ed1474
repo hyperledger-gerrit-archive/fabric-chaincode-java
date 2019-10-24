@@ -1,0 +1,7 @@
+Verified+1: Hyperledger Jobbuilder <jobbuilder@jenkins.hyperledger.org>
+Code-Review+2: James Taylor <jamest@uk.ibm.com>
+Submitted-by: James Taylor <jamest@uk.ibm.com>
+Submitted-at: Thu, 24 Oct 2019 10:04:58 +0000
+Reviewed-on: https://gerrit.hyperledger.org/r/c/fabric-chaincode-java/+/33381
+Project: fabric-chaincode-java
+Branch: refs/heads/release-1.4
